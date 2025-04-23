@@ -1,3 +1,4 @@
+
 # :mortar_board: Trabajo fin de grado :mortar_board:
 
 ## 📚 Aplicación web para planificación de escritura de novelas 📚
@@ -90,7 +91,4 @@ Posibilidad de añadir una funcionalidad que ayude a los escritores a generar id
 ### 📌 Despliegue y Control de Versiones:
 - Git y GitHub: Para la gestión del código fuente y control de versiones.
 - Vercel o Firebase Hosting: Para la publicación y mantenimiento de la aplicación.
-
-
-
 
