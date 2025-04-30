@@ -1,3 +1,11 @@
+
+// En este archivo se definen las funciones para interactuar con Firestore
+// Importar las funciones necesarias de Firebase
+// Importar la configuración de Firebase
+// y la inicialización de la aplicación
+
+
+
 import { getFirestore, doc, setDoc, collection, getDocs } from 'firebase/firestore';
 import app from './config';
 
