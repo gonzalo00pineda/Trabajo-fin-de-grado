@@ -7,6 +7,7 @@ import CapitulosPage from '../pages/CapitulosPage';
 import PersonajesPage from '../pages/PersonajesPage';
 import LineaTemporalPage from '../pages/LineaTemporalPage';
 import MagiaPage from '../pages/MagiaPage';
+import LayoutLibro from '../layouts/LayoutLibro';
 
 const AppRouter = () => {
   return (
@@ -15,13 +16,18 @@ const AppRouter = () => {
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/libros" element={<MisLibrosPage />} />
-        <Route path="/capitulos" element={<CapitulosPage />} />
-        <Route path="/personajes" element={<PersonajesPage />} />
-        <Route path="/linea-temporal" element={<LineaTemporalPage />} />
-        <Route path="/magia" element={<MagiaPage />} />
+        
+        {/* Grupo de rutas con layout de libro */}
+        <Route element={<LayoutLibro />}>
+          <Route path="/capitulos" element={<CapitulosPage />} />
+          <Route path="/personajes" element={<PersonajesPage />} />
+          <Route path="/linea-temporal" element={<LineaTemporalPage />} />
+          <Route path="/magia" element={<MagiaPage />} />
+        </Route>
       </Routes>
     </Router>
   );
 };
 
 export default AppRouter;
+
