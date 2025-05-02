@@ -5,11 +5,15 @@ import { Outlet } from 'react-router-dom';
 const LayoutLibro = () => {
     return (
     <>
-        <Header />
-        <NavBarLibro />
-        <main style={{ padding: "1rem" }}>
-        <Outlet />
-        </main>
+
+        <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+            <Header />
+            <NavBarLibro />
+            <main style={{ flex: 1, padding: '1rem' }}>
+                <Outlet />
+            </main>
+        </div>
+
     </>
     );
 };

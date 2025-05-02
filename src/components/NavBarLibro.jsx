@@ -4,18 +4,36 @@
 // Utiliza React Router para la navegación entre diferentes secciones de la aplicación.
 
 
-import { NavLink } from 'react-router-dom';
-//import './NavBarLibro.css'; // Opcional para estilos separados
+import { Tabs, Tab, Box } from '@mui/material';
+import { useLocation, useNavigate } from 'react-router-dom';
+
+const navItems = [
+    { label: 'Capítulos', path: '/capitulos' },
+    { label: 'Personajes', path: '/personajes' },
+    { label: 'Línea Temporal', path: '/linea-temporal' },
+    { label: 'Sistema de Magia', path: '/magia' },
+];
 
 const NavBarLibro = () => {
+    const location = useLocation();
+    const navigate = useNavigate();
+
     return (
-        <nav style={{ display: "flex", justifyContent: "center", gap: "2rem", backgroundColor: "#ddd", padding: "1rem" }}>
-            <NavLink to="/capitulos">Capítulos</NavLink>
-            <NavLink to="/personajes">Personajes</NavLink>
-            <NavLink to="/linea-temporal">Línea Temporal</NavLink>
-            <NavLink to="/magia">Sistema de Magia</NavLink>
-        </nav>
+        <Box sx={{ bgcolor: 'background.paper' }}>
+            <Tabs
+                value={location.pathname}
+                onChange={(e, newValue) => navigate(newValue)}
+                indicatorColor="primary"
+                textColor="primary"
+                centered
+            >
+                {navItems.map(({ label, path }) => (
+                <Tab key={path} label={label} value={path} />
+                ))}
+            </Tabs>
+        </Box>
     );
 };
 
 export default NavBarLibro;
+
