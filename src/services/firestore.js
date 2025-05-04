@@ -6,20 +6,12 @@
 
 
 
-import { getFirestore, doc, setDoc, collection, getDocs } from 'firebase/firestore';
-import app from './config';
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from '../firebase/config';
 
-const db = getFirestore(app);
-
-// Crear un capítulo para un proyecto
-export async function crearCapitulo(uid, projectId, capituloData) {
-    const capituloRef = doc(collection(db, 'users', uid, 'projects', projectId, 'chapters'));
-    await setDoc(capituloRef, capituloData);
-}
-
-// Obtener todos los personajes de un proyecto
-export async function obtenerPersonajes(uid, projectId) {
-    const personajesRef = collection(db, 'users', uid, 'projects', projectId, 'characters');
-    const snapshot = await getDocs(personajesRef);
+export const getUserBooks = async (uid) => {
+    const librosRef = collection(db, 'users', uid, 'projects');
+    const snapshot = await getDocs(librosRef);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-}
+};
+
