@@ -7,16 +7,18 @@
 import { Tabs, Tab, Box } from '@mui/material';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-const navItems = [
-    { label: 'Capítulos', path: '/capitulos' },
-    { label: 'Personajes', path: '/personajes' },
-    { label: 'Línea Temporal', path: '/linea-temporal' },
-    { label: 'Sistema de Magia', path: '/magia' },
-];
-
-const NavBarLibro = () => {
+const NavBarLibro = ({ idLibro }) => {
     const location = useLocation();
     const navigate = useNavigate();
+
+    const base = `/libros/${idLibro}`;
+
+    const navItems = [
+        { label: 'Capítulos', path: `${base}/capitulos` },
+        { label: 'Personajes', path: `${base}/personajes` },
+        { label: 'Línea Temporal', path: `${base}/linea-temporal` },
+        { label: 'Sistema de Magia', path: `${base}/magia` },
+    ];
 
     return (
         <Box sx={{ bgcolor: 'background.paper' }}>
@@ -28,7 +30,7 @@ const NavBarLibro = () => {
                 centered
             >
                 {navItems.map(({ label, path }) => (
-                <Tab key={path} label={label} value={path} />
+                    <Tab key={path} label={label} value={path} />
                 ))}
             </Tabs>
         </Box>

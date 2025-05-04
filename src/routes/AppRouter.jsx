@@ -18,11 +18,11 @@ const AppRouter = () => {
         <Route path="/libros" element={<MisLibrosPage />} />
         
         {/* Grupo de rutas con layout de libro */}
-        <Route element={<LayoutLibro />}>
-          <Route path="/capitulos" element={<CapitulosPage />} />
-          <Route path="/personajes" element={<PersonajesPage />} />
-          <Route path="/linea-temporal" element={<LineaTemporalPage />} />
-          <Route path="/magia" element={<MagiaPage />} />
+        <Route path="/libros/:idLibro" element={<LayoutLibro />}>
+          <Route path="capitulos" element={<CapitulosPage />} />
+          <Route path="personajes" element={<PersonajesPage />} />
+          <Route path="linea-temporal" element={<LineaTemporalPage />} />
+          <Route path="magia" element={<MagiaPage />} />
         </Route>
       </Routes>
     </Router>

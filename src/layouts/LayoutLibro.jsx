@@ -1,20 +1,18 @@
 import Header from '../components/Header';
 import NavBarLibro from '../components/NavBarLibro';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useParams } from 'react-router-dom';
 
 const LayoutLibro = () => {
-    return (
-    <>
+    const { idLibro } = useParams();
 
+    return (
         <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
             <Header />
-            <NavBarLibro />
+            {idLibro && <NavBarLibro idLibro={idLibro} />}
             <main style={{ flex: 1, padding: '1rem' }}>
                 <Outlet />
             </main>
         </div>
-
-    </>
     );
 };
 
