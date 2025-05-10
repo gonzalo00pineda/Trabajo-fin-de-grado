@@ -1,3 +1,5 @@
+// Este archivo define el componente de tarjeta para mostrar información de un libro.
+
 import { Card, CardContent, Typography, CardActionArea, CardMedia } from '@mui/material';
 
 const LibroCard = ({ libro, onClick }) => {

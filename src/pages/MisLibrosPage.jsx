@@ -1,38 +1,48 @@
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Grid, Container, Typography } from '@mui/material';
 import LibroCard from '../components/LibroCard';
-import { getUserBooks } from '../services/firestore'; 
+import NuevoLibroForm from '../components/NuevoLibroForm';
+import { getUserBooks } from '../services/firestore';
+import { auth } from '../firebase/config';
 
 const MisLibrosPage = () => {
-    const [libros, setLibros] = useState([]);
-    const navigate = useNavigate();
+  const [libros, setLibros] = useState([]);
+  const navigate = useNavigate();
+  const uid = auth.currentUser?.uid;
 
-    useEffect(() => {
-        getUserBooks('UID_EJEMPLO') // 🔁 REEMPLAZAR con el UID real más adelante
-        .then(setLibros)
-        .catch(console.error);
-    }, []);
 
-    const handleSeleccionarLibro = (idLibro) => {
-        navigate(`/libros/${idLibro}/capitulos`);
-    };
+  const cargarLibros = useCallback(() => {
+    if (!uid) return;
+    getUserBooks(uid).then(setLibros).catch(console.error);
+  }, [uid]);
 
-    return (
-        <Container sx={{ mt: 4 }}>
-            <Typography variant="h4" gutterBottom>
-                Mis Libros
-            </Typography>
-            <Grid container spacing={2}>
-                {libros.map((libro) => (
-                    <Grid key={libro.id}>
-                        <LibroCard libro={libro} onClick={handleSeleccionarLibro} />
-                    </Grid>
-                ))}
-            </Grid>
-        </Container>
-    );
+  useEffect(() => {
+    cargarLibros();
+  }, [cargarLibros]);
+
+  const handleSeleccionarLibro = (idLibro) => {
+    navigate(`/libros/${idLibro}/capitulos`);
+  };
+
+  if (!uid) return <p>Cargando usuario...</p>;
+
+  return (
+    <Container sx={{ mt: 4 }}>
+      <Typography variant="h4" gutterBottom>Mis Libros</Typography>
+
+      <NuevoLibroForm uid={uid} onLibroCreado={cargarLibros} />
+
+      <Grid container spacing={2}>
+        {libros.map((libro) => (
+          <Grid key={libro.id}>
+            <LibroCard libro={libro} onClick={handleSeleccionarLibro} />
+          </Grid>
+        ))}
+      </Grid>
+    </Container>
+  );
 };
 
 export default MisLibrosPage;
