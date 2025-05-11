@@ -23,8 +23,12 @@ import {
   Droppable,
   Draggable
 } from '@hello-pangea/dnd';
+import { useRef } from 'react';
+
 
 const CapitulosPage = () => {
+  const refsCapitulos = useRef({});
+
   const { idLibro } = useParams();
   const uid = auth.currentUser?.uid;
 
@@ -72,6 +76,13 @@ const CapitulosPage = () => {
     setMostrarEditor(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
+  const scrollToCapitulo = (id) => {
+    const element = refsCapitulos.current[id];
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
   // 🔁 Manejar reordenamiento
   const handleDragEnd = async (result) => {
     if (!result.destination) return;
@@ -99,10 +110,12 @@ const CapitulosPage = () => {
   return (
     <Box display="flex" height="100vh">
       {/* Sidebar */}
-      <Box width="25%" bgcolor="grey.200" p={2} sx={{ overflowY: 'auto' }}>
+      <Box width="20%" bgcolor="grey.200" p={2} sx={{ overflowY: 'auto' }}>
         <Typography variant="h6" gutterBottom>Capítulos</Typography>
         {capitulos.map((cap, i) => (
-          <Box key={cap.id} p={1}>{`${i + 1}. ${cap.titulo}`}</Box>
+          <Box key={cap.id} p={1} onClick={() => scrollToCapitulo(cap.id)} sx={{ cursor: 'pointer' }}>
+            {`${i + 1}. ${cap.titulo}`}
+          </Box>
         ))}
       </Box>
 
@@ -117,7 +130,10 @@ const CapitulosPage = () => {
                   <Draggable key={cap.id} draggableId={cap.id} index={index}>
                     {(provided) => (
                       <Box
-                        ref={provided.innerRef}
+                        ref={(el) => {
+                          provided.innerRef(el); // ⬅ NECESARIO para el drag & drop
+                          refsCapitulos.current[cap.id] = el; 
+                        }}
                         {...provided.draggableProps}
                         {...provided.dragHandleProps}
                         sx={{
@@ -161,7 +177,7 @@ const CapitulosPage = () => {
                             onChange={(e) => actualizarCapitulo(cap.id, 'contenido', e.target.value)}
                             margin="normal"
                             multiline
-                            rows={6}
+                            rows={20}
                           />
                         )}
                       </Box>
