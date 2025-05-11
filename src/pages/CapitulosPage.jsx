@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Box, Button, List, ListItem, ListItemText, TextField, Typography } from '@mui/material';
+import {
+  Box, Button, IconButton, ListItemText, TextField, Typography
+} from '@mui/material';
 import { useParams } from 'react-router-dom';
 import { auth } from '../firebase/config';
 import {
@@ -8,53 +10,86 @@ import {
   addDoc,
   updateDoc,
   doc,
+  deleteDoc,
+  query,
+  orderBy,
+  writeBatch
 } from 'firebase/firestore';
 import { db } from '../firebase/config';
+import DeleteIcon from '@mui/icons-material/Delete';
+
+import {
+  DragDropContext,
+  Droppable,
+  Draggable
+} from '@hello-pangea/dnd';
 
 const CapitulosPage = () => {
   const { idLibro } = useParams();
   const uid = auth.currentUser?.uid;
 
   const [capitulos, setCapitulos] = useState([]);
-  const [capituloSeleccionado, setCapituloSeleccionado] = useState(null);
-  const [mostrarEditor, setMostrarEditor] = useState(true);
+  const [mostrarEditor, setMostrarEditor] = useState({});
 
-  // 🧠 Cargar capítulos desde Firestore
   const cargarCapitulos = async () => {
     if (!uid || !idLibro) return;
     const ref = collection(db, 'users', uid, 'projects', idLibro, 'chapters');
-    const snapshot = await getDocs(ref);
+    const q = query(ref, orderBy('orden', 'asc'));
+    const snapshot = await getDocs(q);
     const datos = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
     setCapitulos(datos);
-    if (datos.length > 0) setCapituloSeleccionado(datos[0]);
   };
 
-  // ➕ Agregar nuevo capítulo
   const agregarCapitulo = async () => {
     const nuevo = {
       titulo: `Capítulo ${capitulos.length + 1}`,
       resumen: '',
       contenido: '',
+      orden: capitulos.length,
     };
     const ref = collection(db, 'users', uid, 'projects', idLibro, 'chapters');
     const docRef = await addDoc(ref, nuevo);
-    const nuevoConId = { ...nuevo, id: docRef.id };
-    setCapitulos([...capitulos, nuevoConId]);
-    setCapituloSeleccionado(nuevoConId);
+    setCapitulos([...capitulos, { ...nuevo, id: docRef.id }]);
   };
 
-  // 💾 Actualizar capítulo en Firestore
-  const actualizarCapitulo = async (campo, valor) => {
-    if (!capituloSeleccionado) return;
-
-    const actualizado = { ...capituloSeleccionado, [campo]: valor };
-    setCapituloSeleccionado(actualizado);
-    setCapitulos((prev) =>
-      prev.map((c) => (c.id === actualizado.id ? actualizado : c))
+  const actualizarCapitulo = async (id, campo, valor) => {
+    const actualizado = capitulos.map((c) =>
+      c.id === id ? { ...c, [campo]: valor } : c
     );
-
-    const ref = doc(db, 'users', uid, 'projects', idLibro, 'chapters', actualizado.id);
+    setCapitulos(actualizado);
+    const ref = doc(db, 'users', uid, 'projects', idLibro, 'chapters', id);
     await updateDoc(ref, { [campo]: valor });
+  };
+
+  const eliminarCapitulo = async (id) => {
+    if (!confirm("¿Eliminar este capítulo?")) return;
+    const ref = doc(db, 'users', uid, 'projects', idLibro, 'chapters', id);
+    await deleteDoc(ref);
+    cargarCapitulos();
+  };
+
+  const toggleEditor = (id) => {
+    setMostrarEditor(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  // 🔁 Manejar reordenamiento
+  const handleDragEnd = async (result) => {
+    if (!result.destination) return;
+
+    const items = Array.from(capitulos);
+    const [moved] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, moved);
+
+    // Actualiza localmente
+    setCapitulos(items);
+
+    // Actualiza en Firestore (batch)
+    const batch = writeBatch(db);
+    items.forEach((cap, index) => {
+      const ref = doc(db, 'users', uid, 'projects', idLibro, 'chapters', cap.id);
+      batch.update(ref, { orden: index });
+    });
+    await batch.commit();
   };
 
   useEffect(() => {
@@ -63,63 +98,84 @@ const CapitulosPage = () => {
 
   return (
     <Box display="flex" height="100vh">
-      {/* Lista lateral */}
-      <Box width="25%" bgcolor="grey.200" p={2}>
+      {/* Sidebar */}
+      <Box width="25%" bgcolor="grey.200" p={2} sx={{ overflowY: 'auto' }}>
         <Typography variant="h6" gutterBottom>Capítulos</Typography>
-        <List>
-          {capitulos.map((capitulo) => (
-            <ListItem
-              key={capitulo.id}
-              button
-              selected={capituloSeleccionado?.id === capitulo.id}
-              onClick={() => setCapituloSeleccionado(capitulo)}
-            >
-              <ListItemText primary={capitulo.titulo} />
-            </ListItem>
-          ))}
-        </List>
+        {capitulos.map((cap, i) => (
+          <Box key={cap.id} p={1}>{`${i + 1}. ${cap.titulo}`}</Box>
+        ))}
       </Box>
 
-      {/* Sección principal */}
-      <Box flex={1} p={2}>
-        {capituloSeleccionado ? (
-          <>
-            <TextField
-              fullWidth
-              label="Título"
-              value={capituloSeleccionado.titulo}
-              onChange={(e) => actualizarCapitulo('titulo', e.target.value)}
-              margin="normal"
-            />
-            <TextField
-              fullWidth
-              label="Resumen"
-              value={capituloSeleccionado.resumen}
-              onChange={(e) => actualizarCapitulo('resumen', e.target.value)}
-              margin="normal"
-              multiline
-              rows={3}
-            />
-            <Button onClick={() => setMostrarEditor(!mostrarEditor)} sx={{ mb: 2 }}>
-              {mostrarEditor ? 'Contenido ▲' : 'Contenido ▼'}
-            </Button>
-            {mostrarEditor && (
-              <TextField
-                fullWidth
-                label="Contenido"
-                value={capituloSeleccionado.contenido}
-                onChange={(e) => actualizarCapitulo('contenido', e.target.value)}
-                margin="normal"
-                multiline
-                rows={10}
-              />
+      {/* Zona principal */}
+      <Box flex={1} p={2} sx={{ overflowY: 'auto' }}>
+
+        <DragDropContext onDragEnd={handleDragEnd}>
+          <Droppable droppableId="capitulos">
+            {(provided) => (
+              <div {...provided.droppableProps} ref={provided.innerRef}>
+                {capitulos.map((cap, index) => (
+                  <Draggable key={cap.id} draggableId={cap.id} index={index}>
+                    {(provided) => (
+                      <Box
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                        {...provided.dragHandleProps}
+                        sx={{
+                          border: '1px solid #ccc',
+                          p: 2,
+                          mb: 2,
+                          backgroundColor: '#fdfdfd'
+                        }}
+                      >
+                        <Box display="flex" justifyContent="space-between" alignItems="center">
+                          <Typography variant="h5">Capítulo {index + 1}</Typography>
+                          <IconButton onClick={() => eliminarCapitulo(cap.id)} size="small">
+                            <DeleteIcon />
+                          </IconButton>
+                        </Box>
+
+                        <TextField
+                          fullWidth
+                          label="Título"
+                          value={cap.titulo}
+                          onChange={(e) => actualizarCapitulo(cap.id, 'titulo', e.target.value)}
+                          margin="normal"
+                        />
+                        <TextField
+                          fullWidth
+                          label="Resumen"
+                          value={cap.resumen}
+                          onChange={(e) => actualizarCapitulo(cap.id, 'resumen', e.target.value)}
+                          margin="normal"
+                          multiline
+                          rows={2}
+                        />
+                        <Button onClick={() => toggleEditor(cap.id)} sx={{ mb: 1 }}>
+                          {mostrarEditor[cap.id] ? 'Contenido ▲' : 'Contenido ▼'}
+                        </Button>
+                        {mostrarEditor[cap.id] && (
+                          <TextField
+                            fullWidth
+                            label="Contenido"
+                            value={cap.contenido}
+                            onChange={(e) => actualizarCapitulo(cap.id, 'contenido', e.target.value)}
+                            margin="normal"
+                            multiline
+                            rows={6}
+                          />
+                        )}
+                      </Box>
+                    )}
+                  </Draggable>
+                ))}
+                {provided.placeholder}
+              </div>
             )}
-          </>
-        ) : (
-          <Typography variant="h6">Selecciona o crea un capítulo</Typography>
-        )}
-        <Button variant="contained" onClick={agregarCapitulo} fullWidth sx={{ mt: 2 }}>
-          Añadir capítulo
+          </Droppable>
+        </DragDropContext>
+
+        <Button variant="contained" onClick={agregarCapitulo} fullWidth sx={{ mt: 3 }}>
+          Añadir nuevo capítulo
         </Button>
       </Box>
     </Box>
