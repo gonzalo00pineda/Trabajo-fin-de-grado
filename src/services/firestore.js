@@ -37,6 +37,18 @@ export const subirImagenPortada = async (uid, archivo) => {
 };
 
 
+// obtiene la lista de capítulos de un libro desde Firestore
+export const getChapters = async (uid, libroId) => {
+    const ref = collection(db, 'users', uid, 'projects', libroId, 'chapters');
+    const snapshot = await getDocs(ref);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+};
 
+// guarda un nuevo capítulo en Firestore
+// y lo asocia al libro correspondiente
+export const guardarCapitulo = async (uid, libroId, data) => {
+    const ref = collection(db, 'users', uid, 'projects', libroId, 'chapters');
+    await addDoc(ref, data);
+};
 
 
