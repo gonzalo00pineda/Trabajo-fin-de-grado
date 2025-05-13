@@ -6,6 +6,7 @@ import LibroCard from '../components/LibroCard';
 import NuevoLibroForm from '../components/NuevoLibroForm';
 import { getUserBooks } from '../services/firestore';
 import { auth } from '../firebase/config';
+import { getAuth } from "firebase/auth";
 
 const MisLibrosPage = () => {
   const [libros, setLibros] = useState([]);
@@ -21,6 +22,12 @@ const MisLibrosPage = () => {
   useEffect(() => {
     cargarLibros();
   }, [cargarLibros]);
+
+  useEffect(() => {
+    getAuth().currentUser?.getIdToken().then(token => {
+      console.log("Token de usuario:", token);
+    });
+  }, []);
 
   const handleSeleccionarLibro = (idLibro) => {
     navigate(`/libros/${idLibro}/capitulos`);
