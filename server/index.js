@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import librosRoutes from './routes/libros.routes.js';
 
 const app = express();
 const PORT = 3001;
@@ -15,3 +16,5 @@ app.get('/api/ping', (req, res) => {
 app.listen(PORT, () => {
     console.log(`Servidor escuchando en http://localhost:${PORT}`);
 });
+
+app.use('/api/libros', librosRoutes);
