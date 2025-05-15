@@ -10,6 +10,24 @@ import { collection, addDoc, getDocs } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../firebase/config'; // ahora necesitaremos storage también
 
+// crea un nuevo personaje en Firestore
+// y lo asocia al libro correspondiente
+export const crearPersonaje = async (uid, projectId, personaje) => {
+    const refPersonajes = collection(db, 'users', uid, 'projects', projectId, 'characters');
+    const docRef = await addDoc(refPersonajes, personaje);
+    return { ...personaje, id: docRef.id };
+};
+
+// obtiene la lista de personajes de un libro desde Firestore
+export const cargarPersonajes = async (uid, projectId) => {
+    const ref = collection(db, 'users', uid, 'projects', projectId, 'characters');
+    const snap = await getDocs(ref);
+
+    return snap.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+    }));
+};
 
 // obtiene la lista de libros del usuario desde Firestore
 export const getUserBooks = async (uid) => {
