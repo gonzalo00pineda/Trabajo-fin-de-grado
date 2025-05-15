@@ -71,3 +71,31 @@ export const obtenerLibroPorId = (req, res) => {
     const { id } = req.params;
     res.json({ message: `Aquí se devolvería el libro con ID ${id}` });
 };
+
+
+export const eliminarLibro = async (req, res) => {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ error: 'Token no proporcionado' });
+    }
+
+    const token = authHeader.split(' ')[1];
+
+    try {
+        const decoded = await adminAuth.verifyIdToken(token);
+        const uid = decoded.uid;
+        const { id } = req.params;
+    
+        const ref = db.collection('users').doc(uid).collection('projects').doc(id);
+        await ref.delete();
+    
+        res.json({ message: `Libro ${id} eliminado correctamente.` });
+    } catch (error) {
+        console.error('Error al eliminar libro:', error);
+        res.status(500).json({ error: 'Error al eliminar libro' });
+    }
+};
+
+
+
