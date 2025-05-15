@@ -31,8 +31,40 @@ export const obtenerLibros = async (req, res) => {
     }
 };
 
-export const crearLibro = (req, res) => {
-    res.json({ message: 'Aquí se crearía un nuevo libro en Firestore', data: req.body });
+export const crearLibro = async (req, res) => {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ error: 'Token no proporcionado' });
+    }
+
+    const token = authHeader.split(' ')[1];
+
+    try {
+        const decoded = await adminAuth.verifyIdToken(token);
+        const uid = decoded.uid;
+
+        const { title, description, cover = null } = req.body;
+    
+        if (!title || !description) {
+            return res.status(400).json({ error: 'Faltan campos obligatorios' });
+        }
+
+        const ref = await db.collection('users')
+            .doc(uid)
+            .collection('projects')
+            .add({ title, description, cover });
+
+        res.status(201).json({
+            id: ref.id,
+            title,
+            description,
+            cover
+        });
+    } catch (error) {
+        console.error('Error al crear libro:', error);
+        res.status(500).json({ error: 'Error al crear libro' });
+    }
 };
 
 export const obtenerLibroPorId = (req, res) => {
