@@ -1,10 +1,11 @@
 // Este archivo define el componente de tarjeta para mostrar información de un libro.
 
-import { Card, CardContent, Typography, CardActionArea, CardMedia } from '@mui/material';
+import { Card, CardContent, Typography, CardActionArea, CardMedia, IconButton } from '@mui/material';
+import DeleteIcon from '@mui/icons-material/Delete';
 
-const LibroCard = ({ libro, onClick }) => {
+const LibroCard = ({ libro, onClick, onEliminar }) => {
     return (
-        <Card sx={{ maxWidth: 300 }}>
+        <Card sx={{ maxWidth: 300, position: 'relative' }}>
             <CardActionArea onClick={() => onClick(libro.id)}>
                 {libro.cover && (
                     <CardMedia
@@ -23,6 +24,13 @@ const LibroCard = ({ libro, onClick }) => {
                     </Typography>
                 </CardContent>
             </CardActionArea>
+            <IconButton
+                onClick={() => onEliminar(libro.id)}
+                size="small"
+                sx={{ position: 'absolute', top: 8, right: 8, color: 'grey' }}
+            >
+                <DeleteIcon />
+            </IconButton>
         </Card>
     );
 };
