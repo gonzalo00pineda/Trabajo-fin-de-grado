@@ -14,13 +14,14 @@ import {
     Fab
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import DeleteIcon from '@mui/icons-material/Delete';
 import defaultImage from '../assets/default-character.png';
 import { useParams } from 'react-router-dom';
 import { getAuth } from 'firebase/auth';
 import { crearPersonaje } from '../services/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '../firebase/config'; // Ajusta la ruta si es distinta
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useEffect } from 'react';
 import { cargarPersonajes } from '../services/firestore'
@@ -94,6 +95,15 @@ const PersonajesPage = () => {
         p.nombre.toLowerCase().includes(busqueda.toLowerCase())
     );
 
+    const eliminarPersonaje = async (idPersonaje) => {
+        // Eliminar el personaje de Firestore
+        const personajeRef = doc(db, `users/${uid}/projects/${idLibro}/characters`, idPersonaje);
+        await deleteDoc(personajeRef);
+
+        // Actualizar el estado local
+        setPersonajes((prev) => prev.filter((p) => p.id !== idPersonaje));
+    };
+
     useEffect(() => {
         const obtenerPersonajes = async () => {
             if (!uid || !idLibro) return;
@@ -162,6 +172,13 @@ const PersonajesPage = () => {
                     margin="normal"
                     />
                 </Box>
+                <IconButton
+                    aria-label="delete"
+                    onClick={() => eliminarPersonaje(p.id)}
+                    sx={{ marginLeft: 'auto' }}
+                >
+                    <DeleteIcon />
+                </IconButton>
                 </Box>
 
                 <Button onClick={() => toggleDetalles(p.id)} sx={{ mb: 1 }}>
