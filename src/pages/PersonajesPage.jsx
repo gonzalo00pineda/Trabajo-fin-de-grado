@@ -21,10 +21,11 @@ import { getAuth } from 'firebase/auth';
 import { crearPersonaje } from '../services/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '../firebase/config'; // Ajusta la ruta si es distinta
-import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { doc, updateDoc, deleteDoc, writeBatch } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useEffect } from 'react';
 import { cargarPersonajes } from '../services/firestore'
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 
 
 
@@ -104,6 +105,25 @@ const PersonajesPage = () => {
         setPersonajes((prev) => prev.filter((p) => p.id !== idPersonaje));
     };
 
+    const handleDragEnd = async (result) => {
+        if (!result.destination) return;
+
+        const items = Array.from(personajes);
+        const [moved] = items.splice(result.source.index, 1);
+        items.splice(result.destination.index, 0, moved);
+
+        // Actualiza localmente
+        setPersonajes(items);
+
+        // Actualiza en Firestore (batch)
+        const batch = writeBatch(db);
+        items.forEach((personaje, index) => {
+            const ref = doc(db, 'users', uid, 'projects', idLibro, 'characters', personaje.id);
+            batch.update(ref, { orden: index });
+        });
+        await batch.commit();
+    };
+
     useEffect(() => {
         const obtenerPersonajes = async () => {
             if (!uid || !idLibro) return;
@@ -141,90 +161,105 @@ const PersonajesPage = () => {
 
         {/* Main Section */}
         <Box flex={1} p={2} sx={{ overflowY: 'auto' }}>
-            {personajes.map((p) => (
-            <Box
-                key={p.id}
-                ref={(el) => (refsPersonajes.current[p.id] = el)}
-                sx={{ border: '1px solid #ccc', p: 2, mb: 2, backgroundColor: '#fdfdfd' }}
-            >
-                <Box display="flex" alignItems="center" gap={2}>
-                <Avatar
-                    src={p.imagen}
-                    alt={p.nombre}
-                    sx={{ width: 96, height: 96, cursor: 'pointer' }}
-                    onClick={() => document.getElementById(`input-img-${p.id}`)?.click()}
-                />
+            <DragDropContext onDragEnd={handleDragEnd}>
+                <Droppable droppableId="personajes">
+                    {(provided) => (
+                        <div {...provided.droppableProps} ref={provided.innerRef}>
+                            {personajes.map((p, index) => (
+                                <Draggable key={p.id} draggableId={p.id} index={index}>
+                                    {(provided) => (
+                                        <Box
+                                            ref={(el) => {
+                                                provided.innerRef(el);
+                                                refsPersonajes.current[p.id] = el;
+                                            }}
+                                            {...provided.draggableProps}
+                                            {...provided.dragHandleProps}
+                                            sx={{ border: '1px solid #ccc', p: 2, mb: 2, backgroundColor: '#fdfdfd' }}
+                                        >
+                                            <Box display="flex" alignItems="center" gap={2}>
+                                                <Avatar
+                                                    src={p.imagen}
+                                                    alt={p.nombre}
+                                                    sx={{ width: 96, height: 96, cursor: 'pointer' }}
+                                                    onClick={() => document.getElementById(`input-img-${p.id}`)?.click()}
+                                                />
+                                                <Box flex={1}>
+                                                    <TextField
+                                                        fullWidth
+                                                        label="Nombre"
+                                                        value={p.nombre}
+                                                        onChange={(e) => actualizarPersonaje(p.id, 'nombre', e.target.value)}
+                                                        margin="normal"
+                                                    />
+                                                    <TextField
+                                                        fullWidth
+                                                        label="Rol"
+                                                        value={p.rol}
+                                                        onChange={(e) => actualizarPersonaje(p.id, 'rol', e.target.value)}
+                                                        margin="normal"
+                                                    />
+                                                </Box>
+                                                <IconButton
+                                                    aria-label="delete"
+                                                    onClick={() => eliminarPersonaje(p.id)}
+                                                    sx={{ marginLeft: 'auto' }}
+                                                >
+                                                    <DeleteIcon />
+                                                </IconButton>
+                                            </Box>
 
-
-                <Box flex={1}>
-                    <TextField
-                    fullWidth
-                    label="Nombre"
-                    value={p.nombre}
-                    onChange={(e) => actualizarPersonaje(p.id, 'nombre', e.target.value)}
-                    margin="normal"
-                    />
-                    <TextField
-                    fullWidth
-                    label="Rol"
-                    value={p.rol}
-                    onChange={(e) => actualizarPersonaje(p.id, 'rol', e.target.value)}
-                    margin="normal"
-                    />
-                </Box>
-                <IconButton
-                    aria-label="delete"
-                    onClick={() => eliminarPersonaje(p.id)}
-                    sx={{ marginLeft: 'auto' }}
-                >
-                    <DeleteIcon />
-                </IconButton>
-                </Box>
-
-                <Button onClick={() => toggleDetalles(p.id)} sx={{ mb: 1 }}>
-                {mostrarDetalles[p.id] ? 'Ocultar detalles ▲' : 'Mostrar detalles ▼'}
-                </Button>
-                <Collapse in={mostrarDetalles[p.id]}>
-                <TextField
-                    fullWidth
-                    label="Información General"
-                    value={p.infoGeneral}
-                    onChange={(e) => actualizarPersonaje(p.id, 'infoGeneral', e.target.value)}
-                    margin="normal"
-                    multiline
-                    rows={3}
-                />
-                <TextField
-                    fullWidth
-                    label="Descripción"
-                    value={p.descripcion}
-                    onChange={(e) => actualizarPersonaje(p.id, 'descripcion', e.target.value)}
-                    margin="normal"
-                    multiline
-                    rows={3}
-                />
-                <TextField
-                    fullWidth
-                    label="Relación con otros personajes"
-                    value={p.relaciones}
-                    onChange={(e) => actualizarPersonaje(p.id, 'relaciones', e.target.value)}
-                    margin="normal"
-                    multiline
-                    rows={3}
-                />
-                </Collapse>
-                <input
-                    type="file"
-                    accept="image/*"
-                    id={`input-img-${p.id}`}
-                    style={{ display: 'none' }}
-                    onChange={(e) => {
-                        const archivo = e.target.files[0];
-                        if (archivo) subirImagen(archivo, p.id);
-                    }}
-                />
-            </Box>
-            ))}
+                                            <Button onClick={() => toggleDetalles(p.id)} sx={{ mb: 1 }}>
+                                                {mostrarDetalles[p.id] ? 'Ocultar detalles ▲' : 'Mostrar detalles ▼'}
+                                            </Button>
+                                            <Collapse in={mostrarDetalles[p.id]}>
+                                                <TextField
+                                                    fullWidth
+                                                    label="Información General"
+                                                    value={p.infoGeneral}
+                                                    onChange={(e) => actualizarPersonaje(p.id, 'infoGeneral', e.target.value)}
+                                                    margin="normal"
+                                                    multiline
+                                                    rows={3}
+                                                />
+                                                <TextField
+                                                    fullWidth
+                                                    label="Descripción"
+                                                    value={p.descripcion}
+                                                    onChange={(e) => actualizarPersonaje(p.id, 'descripcion', e.target.value)}
+                                                    margin="normal"
+                                                    multiline
+                                                    rows={3}
+                                                />
+                                                <TextField
+                                                    fullWidth
+                                                    label="Relación con otros personajes"
+                                                    value={p.relaciones}
+                                                    onChange={(e) => actualizarPersonaje(p.id, 'relaciones', e.target.value)}
+                                                    margin="normal"
+                                                    multiline
+                                                    rows={3}
+                                                />
+                                            </Collapse>
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                id={`input-img-${p.id}`}
+                                                style={{ display: 'none' }}
+                                                onChange={(e) => {
+                                                    const archivo = e.target.files[0];
+                                                    if (archivo) subirImagen(archivo, p.id);
+                                                }}
+                                            />
+                                        </Box>
+                                    )}
+                                </Draggable>
+                            ))}
+                            {provided.placeholder}
+                        </div>
+                    )}
+                </Droppable>
+            </DragDropContext>
 
             <Fab
             color="primary"
