@@ -29,16 +29,6 @@ import { cargarPersonajes } from '../services/firestore'
 
 const PersonajesPage = () => {
     const [personajes, setPersonajes] = useState([]);
-    /*
-    const [nuevoPersonaje, setNuevoPersonaje] = useState({
-        nombre: '',
-        rol: '',
-        descripcion: '',
-        infoGeneral: '',
-        relaciones: '',
-        imagen: ''
-    });
-    */
 
     const [busqueda, setBusqueda] = useState('');
     const [mostrarDetalles, setMostrarDetalles] = useState({});
@@ -46,7 +36,7 @@ const PersonajesPage = () => {
     const { idLibro } = useParams();
     const auth = getAuth();
     const uid = auth.currentUser?.uid;
-    const fileInputRef = useRef();
+    
 
 
 
@@ -67,12 +57,16 @@ const PersonajesPage = () => {
 
     const subirImagen = async (archivo, idPersonaje) => {
         const nombreArchivo = `${Date.now()}-${archivo.name}`;
-        const ruta = `users/${uid}/projects/${idLibro}/characters/${nombreArchivo}`;
+        const ruta = `gs://tfg-planificador-novelas.firebasestorage.app/${nombreArchivo}`;
         const storageRef = ref(storage, ruta);
         await uploadBytes(storageRef, archivo);
         const url = await getDownloadURL(storageRef);
 
-        // Actualizar en Firestore si ya está guardado (opcional)
+        // Actualizar en Firestore
+        const refDoc = doc(db, 'users', uid, 'projects', idLibro, 'characters', idPersonaje);
+        await updateDoc(refDoc, { imagen: url });
+
+
         // Actualizar en el estado local
         setPersonajes((prev) =>
             prev.map((p) =>
@@ -147,9 +141,11 @@ const PersonajesPage = () => {
                 <Avatar
                     src={p.imagen}
                     alt={p.nombre}
-                    sx={{ width: 96, height: 96 }}
-                    onClick={() => fileInputRef.current?.click()}
+                    sx={{ width: 96, height: 96, cursor: 'pointer' }}
+                    onClick={() => document.getElementById(`input-img-${p.id}`)?.click()}
                 />
+
+
                 <Box flex={1}>
                     <TextField
                     fullWidth
@@ -201,14 +197,14 @@ const PersonajesPage = () => {
                 />
                 </Collapse>
                 <input
-                type="file"
-                accept="image/*"
-                style={{ display: 'none' }}
-                ref={fileInputRef}
-                onChange={(e) => {
-                    const archivo = e.target.files[0];
-                    if (archivo) subirImagen(archivo, p.id);
-                }}
+                    type="file"
+                    accept="image/*"
+                    id={`input-img-${p.id}`}
+                    style={{ display: 'none' }}
+                    onChange={(e) => {
+                        const archivo = e.target.files[0];
+                        if (archivo) subirImagen(archivo, p.id);
+                    }}
                 />
             </Box>
             ))}
