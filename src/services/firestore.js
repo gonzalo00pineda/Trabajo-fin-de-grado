@@ -9,6 +9,7 @@
 import { collection, addDoc, getDocs } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../firebase/config'; // ahora necesitaremos storage también
+import { doc, getDoc } from 'firebase/firestore';
 
 // crea un nuevo personaje en Firestore
 // y lo asocia al libro correspondiente
@@ -34,6 +35,12 @@ export const getUserBooks = async (uid) => {
     const librosRef = collection(db, 'users', uid, 'projects');
     const snapshot = await getDocs(librosRef);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+};
+
+export const obtenerLibroPorId = async (uid, idLibro) => {
+    const ref = doc(db, 'users', uid, 'projects', idLibro);
+    const snap = await getDoc(ref);
+    return snap.exists() ? { id: snap.id, ...snap.data() } : null;
 };
 
 // guarda un nuevo libro en Firestore
