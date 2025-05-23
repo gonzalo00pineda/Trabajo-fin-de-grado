@@ -44,8 +44,8 @@ const EscalaImportancia = ({ valor }) => {
 
 const LineaTemporalPage = () => {
     const [eventos, setEventos] = useState([]);
-    const [numCapitulos, setNumCapitulos] = useState(10);
     const [busqueda, setBusqueda] = useState('');
+    const [busquedaCapitulo, setBusquedaCapitulo] = useState('');
     const [dialogoAbierto, setDialogoAbierto] = useState(false);
     const [eventoEditando, setEventoEditando] = useState(null);
     const [nuevoEvento, setNuevoEvento] = useState({
@@ -137,23 +137,18 @@ const LineaTemporalPage = () => {
         setEventos(eventos.filter(e => e.id !== id));
     };
 
-    const eventosFiltrados = eventos.filter(e => 
-        e.titulo.toLowerCase().includes(busqueda.toLowerCase())
-    );
+    const eventosFiltrados = eventos.filter(e => {
+        const coincideTitulo = e.titulo.toLowerCase().includes(busqueda.toLowerCase());
+        const coincideCapitulo = busquedaCapitulo === '' || e.capitulo.toString() === busquedaCapitulo;
+        return coincideTitulo && coincideCapitulo;
+    });
 
     return (
         <Box p={3}>
             <Box mb={4} display="flex" gap={2} alignItems="center" justifyContent="center">
                 <TextField
-                    label="Número de capítulos"
-                    type="number"
-                    value={numCapitulos}
-                    onChange={(e) => setNumCapitulos(Math.max(1, parseInt(e.target.value)))}
-                    sx={{ width: 150 }}
-                />
-                <TextField
-                    sx={{ maxWidth: 400 }}
-                    label="Buscar eventos"
+                    sx={{ maxWidth: 300 }}
+                    label="Buscar por título"
                     value={busqueda}
                     onChange={(e) => setBusqueda(e.target.value)}
                     InputProps={{
@@ -163,6 +158,14 @@ const LineaTemporalPage = () => {
                             </InputAdornment>
                         ),
                     }}
+                />
+                <TextField
+                    sx={{ width: 150 }}
+                    label="Filtrar por capítulo"
+                    type="number"
+                    value={busquedaCapitulo}
+                    onChange={(e) => setBusquedaCapitulo(e.target.value)}
+                    inputProps={{ min: 1 }}
                 />
                 <Button variant="contained" onClick={() => abrirDialogo()}>
                     Añadir Evento
@@ -231,9 +234,9 @@ const LineaTemporalPage = () => {
                         label="Capítulo"
                         type="number"
                         value={nuevoEvento.capitulo}
-                        onChange={(e) => setNuevoEvento({ ...nuevoEvento, capitulo: Math.min(Math.max(1, parseInt(e.target.value)), numCapitulos) })}
+                        onChange={(e) => setNuevoEvento({ ...nuevoEvento, capitulo: Math.max(1, parseInt(e.target.value) || 1) })}
                         margin="normal"
-                        inputProps={{ min: 1, max: numCapitulos }}
+                        inputProps={{ min: 1 }}
                     />
                     <Typography gutterBottom>
                         Escala de importancia (1-10)
