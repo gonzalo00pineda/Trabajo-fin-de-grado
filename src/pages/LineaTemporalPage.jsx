@@ -12,7 +12,6 @@ import {
     DialogTitle,
     DialogContent,
     DialogActions,
-    Rating,
     InputAdornment
 } from '@mui/material';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
@@ -23,6 +22,25 @@ import { useParams } from 'react-router-dom';
 import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc, writeBatch, query, orderBy } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { getAuth } from 'firebase/auth';
+
+const EscalaImportancia = ({ valor }) => {
+    return (
+        <Box display="flex" gap={1} my={1} justifyContent="center">
+            {[...Array(10)].map((_, index) => (
+                <Box
+                    key={index}
+                    sx={{
+                        width: 20,
+                        height: 20,
+                        borderRadius: '50%',
+                        border: '2px solid #1976d2',
+                        bgcolor: index < valor ? `rgba(25, 118, 210, ${0.2 + (index * 0.8) / 9})` : 'transparent'
+                    }}
+                />
+            ))}
+        </Box>
+    );
+};
 
 const LineaTemporalPage = () => {
     const [eventos, setEventos] = useState([]);
@@ -125,7 +143,7 @@ const LineaTemporalPage = () => {
 
     return (
         <Box p={3}>
-            <Box mb={4} display="flex" gap={2} alignItems="center">
+            <Box mb={4} display="flex" gap={2} alignItems="center" justifyContent="center">
                 <TextField
                     label="Número de capítulos"
                     type="number"
@@ -134,7 +152,7 @@ const LineaTemporalPage = () => {
                     sx={{ width: 150 }}
                 />
                 <TextField
-                    fullWidth
+                    sx={{ maxWidth: 400 }}
                     label="Buscar eventos"
                     value={busqueda}
                     onChange={(e) => setBusqueda(e.target.value)}
@@ -154,7 +172,7 @@ const LineaTemporalPage = () => {
             <DragDropContext onDragEnd={handleDragEnd}>
                 <Droppable droppableId="eventos">
                     {(provided) => (
-                        <Box {...provided.droppableProps} ref={provided.innerRef}>
+                        <Box {...provided.droppableProps} ref={provided.innerRef} sx={{ maxWidth: 800, margin: '0 auto' }}>
                             {eventosFiltrados.map((evento, index) => (
                                 <Draggable key={evento.id} draggableId={evento.id} index={index}>
                                     {(provided) => (
@@ -164,10 +182,9 @@ const LineaTemporalPage = () => {
                                             {...provided.dragHandleProps}
                                             sx={{ mb: 2 }}
                                         >
-                                            <CardContent>
-                                                <Box display="flex" justifyContent="space-between" alignItems="center">
-                                                    <Typography variant="h6">{evento.titulo}</Typography>
-                                                    <Box>
+                                            <CardContent sx={{ textAlign: 'center', position: 'relative' }}>
+                                                <Box display="flex" flexDirection="column" alignItems="center" gap={1}>
+                                                    <Box sx={{ position: 'absolute', right: 8, top: 8 }}>
                                                         <IconButton onClick={() => abrirDialogo(evento)}>
                                                             <EditIcon />
                                                         </IconButton>
@@ -175,18 +192,17 @@ const LineaTemporalPage = () => {
                                                             <DeleteIcon />
                                                         </IconButton>
                                                     </Box>
+                                                    <Typography variant="h6" sx={{ mt: 1, mb: 2 }}>
+                                                        {evento.titulo}
+                                                    </Typography>
+                                                    <Typography color="textSecondary">
+                                                        Capítulo {evento.capitulo}
+                                                    </Typography>
+                                                    <EscalaImportancia valor={evento.importancia} />
+                                                    <Typography variant="body2" sx={{ maxWidth: '80%', margin: '0 auto' }}>
+                                                        {evento.descripcion}
+                                                    </Typography>
                                                 </Box>
-                                                <Typography color="textSecondary">
-                                                    Capítulo {evento.capitulo}
-                                                </Typography>
-                                                <Rating
-                                                    value={evento.importancia}
-                                                    readOnly
-                                                    max={10}
-                                                />
-                                                <Typography variant="body2">
-                                                    {evento.descripcion}
-                                                </Typography>
                                             </CardContent>
                                         </Card>
                                     )}
@@ -220,16 +236,19 @@ const LineaTemporalPage = () => {
                         inputProps={{ min: 1, max: numCapitulos }}
                     />
                     <Typography gutterBottom>
-                        Importancia (1-10)
+                        Escala de importancia (1-10)
                     </Typography>
-                    <Slider
-                        value={nuevoEvento.importancia}
-                        onChange={(e, newValue) => setNuevoEvento({ ...nuevoEvento, importancia: newValue })}
-                        min={1}
-                        max={10}
-                        marks
-                        valueLabelDisplay="auto"
-                    />
+                    <Box mb={2}>
+                        <EscalaImportancia valor={nuevoEvento.importancia} />
+                        <Slider
+                            value={nuevoEvento.importancia}
+                            onChange={(e, newValue) => setNuevoEvento({ ...nuevoEvento, importancia: newValue })}
+                            min={1}
+                            max={10}
+                            marks
+                            valueLabelDisplay="auto"
+                        />
+                    </Box>
                     <TextField
                         fullWidth
                         label="Descripción"
