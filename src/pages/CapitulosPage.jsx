@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
-  Box, Button, IconButton, ListItemText, TextField, Typography
+  Box, Button, IconButton, ListItemText, TextField, Typography, Fab
 } from '@mui/material';
 import { useParams } from 'react-router-dom';
 import { auth } from '../firebase/config';
@@ -17,23 +17,22 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import DeleteIcon from '@mui/icons-material/Delete';
-
-import {
-  DragDropContext,
-  Droppable,
-  Draggable
-} from '@hello-pangea/dnd';
+import EditIcon from '@mui/icons-material/Edit';
+import SaveIcon from '@mui/icons-material/Save';
+import AddIcon from '@mui/icons-material/Add';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { useRef } from 'react';
 
 
 const CapitulosPage = () => {
   const refsCapitulos = useRef({});
-
   const { idLibro } = useParams();
   const uid = auth.currentUser?.uid;
 
   const [capitulos, setCapitulos] = useState([]);
   const [mostrarEditor, setMostrarEditor] = useState({});
+  const [editandoCapitulo, setEditandoCapitulo] = useState({});
+  const [cambiosTemporales, setCambiosTemporales] = useState({});
 
   const cargarCapitulos = async () => {
     if (!uid || !idLibro) return;
@@ -53,7 +52,13 @@ const CapitulosPage = () => {
     };
     const ref = collection(db, 'users', uid, 'projects', idLibro, 'chapters');
     const docRef = await addDoc(ref, nuevo);
-    setCapitulos([...capitulos, { ...nuevo, id: docRef.id }]);
+    const nuevoCapitulo = { ...nuevo, id: docRef.id };
+    setCapitulos([...capitulos, nuevoCapitulo]);
+    
+    // Esperamos a que el DOM se actualice antes de hacer scroll
+    setTimeout(() => {
+      scrollToCapitulo(docRef.id);
+    }, 100);
   };
 
   const actualizarCapitulo = async (id, campo, valor) => {
@@ -103,6 +108,49 @@ const CapitulosPage = () => {
     await batch.commit();
   };
 
+  const iniciarEdicion = (id) => {
+    setEditandoCapitulo(prev => ({ ...prev, [id]: true }));
+    const capituloActual = capitulos.find(c => c.id === id);
+    setCambiosTemporales(prev => ({
+      ...prev,
+      [id]: { 
+        titulo: capituloActual.titulo,
+        resumen: capituloActual.resumen
+      }
+    }));
+  };
+
+  const handleCambioTemporal = (id, campo, valor) => {
+    setCambiosTemporales(prev => ({
+      ...prev,
+      [id]: { 
+        ...prev[id],
+        [campo]: valor
+      }
+    }));
+  };
+
+  const guardarEdicion = async (id) => {
+    const cambios = cambiosTemporales[id];
+    if (!cambios) return;
+
+    // Actualizar el título
+    const tituloFinal = cambios.titulo?.trim() || `Capítulo ${capitulos.findIndex(c => c.id === id) + 1}`;
+    await actualizarCapitulo(id, 'titulo', tituloFinal);
+
+    // Actualizar el resumen si hay cambios
+    if (cambios.resumen !== undefined) {
+      await actualizarCapitulo(id, 'resumen', cambios.resumen);
+    }
+    
+    setEditandoCapitulo(prev => ({ ...prev, [id]: false }));
+    setCambiosTemporales(prev => {
+      const newState = { ...prev };
+      delete newState[id];
+      return newState;
+    });
+  };
+
   useEffect(() => {
     cargarCapitulos();
   }, [uid, idLibro]);
@@ -121,7 +169,6 @@ const CapitulosPage = () => {
 
       {/* Zona principal */}
       <Box flex={1} p={2} sx={{ overflowY: 'auto' }}>
-
         <DragDropContext onDragEnd={handleDragEnd}>
           <Droppable droppableId="capitulos">
             {(provided) => (
@@ -131,8 +178,8 @@ const CapitulosPage = () => {
                     {(provided) => (
                       <Box
                         ref={(el) => {
-                          provided.innerRef(el); // ⬅ NECESARIO para el drag & drop
-                          refsCapitulos.current[cap.id] = el; 
+                          provided.innerRef(el);
+                          refsCapitulos.current[cap.id] = el;
                         }}
                         {...provided.draggableProps}
                         {...provided.dragHandleProps}
@@ -143,29 +190,58 @@ const CapitulosPage = () => {
                           backgroundColor: '#fdfdfd'
                         }}
                       >
-                        <Box display="flex" justifyContent="space-between" alignItems="center">
-                          <Typography variant="h5">Capítulo {index + 1}</Typography>
-                          <IconButton onClick={() => eliminarCapitulo(cap.id)} size="small">
-                            <DeleteIcon />
-                          </IconButton>
+                        <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                          <Box display="flex" alignItems="center" gap={2}>
+                            <Typography variant="h5">
+                              Capítulo {index + 1}:
+                            </Typography>
+                            {editandoCapitulo[cap.id] ? (
+                              <TextField
+                                value={cambiosTemporales[cap.id]?.titulo ?? ''}
+                                onChange={(e) => handleCambioTemporal(cap.id, 'titulo', e.target.value)}
+                                size="small"
+                                autoFocus
+                              />
+                            ) : (
+                              <Typography variant="h5">
+                                {cap.titulo}
+                              </Typography>
+                            )}
+                          </Box>
+                          <Box>
+                            {editandoCapitulo[cap.id] ? (
+                              <IconButton onClick={() => guardarEdicion(cap.id)} size="small">
+                                <SaveIcon />
+                              </IconButton>
+                            ) : (
+                              <IconButton onClick={() => iniciarEdicion(cap.id)} size="small">
+                                <EditIcon />
+                              </IconButton>
+                            )}
+                            <IconButton onClick={() => eliminarCapitulo(cap.id)} size="small">
+                              <DeleteIcon />
+                            </IconButton>
+                          </Box>
                         </Box>
 
-                        <TextField
-                          fullWidth
-                          label="Título"
-                          value={cap.titulo}
-                          onChange={(e) => actualizarCapitulo(cap.id, 'titulo', e.target.value)}
-                          margin="normal"
-                        />
-                        <TextField
-                          fullWidth
-                          label="Resumen"
-                          value={cap.resumen}
-                          onChange={(e) => actualizarCapitulo(cap.id, 'resumen', e.target.value)}
-                          margin="normal"
-                          multiline
-                          rows={2}
-                        />
+                        <Box sx={{ pl: 2 }}>
+                          {editandoCapitulo[cap.id] ? (
+                            <TextField
+                              fullWidth
+                              label="Resumen"
+                              value={cambiosTemporales[cap.id]?.resumen || cap.resumen}
+                              onChange={(e) => handleCambioTemporal(cap.id, 'resumen', e.target.value)}
+                              multiline
+                              rows={2}
+                              margin="normal"
+                            />
+                          ) : (
+                            <Typography variant="body1" sx={{ my: 2 }}>
+                              {cap.resumen || 'Sin resumen'}
+                            </Typography>
+                          )}
+                        </Box>
+
                         <Button onClick={() => toggleEditor(cap.id)} sx={{ mb: 1 }}>
                           {mostrarEditor[cap.id] ? 'Contenido ▲' : 'Contenido ▼'}
                         </Button>
@@ -190,9 +266,14 @@ const CapitulosPage = () => {
           </Droppable>
         </DragDropContext>
 
-        <Button variant="contained" onClick={agregarCapitulo} fullWidth sx={{ mt: 3 }}>
-          Añadir nuevo capítulo
-        </Button>
+        <Fab
+          color="primary"
+          aria-label="add"
+          onClick={agregarCapitulo}
+          sx={{ position: 'fixed', bottom: 16, right: 16 }}
+        >
+          <AddIcon />
+        </Fab>
       </Box>
     </Box>
   );
