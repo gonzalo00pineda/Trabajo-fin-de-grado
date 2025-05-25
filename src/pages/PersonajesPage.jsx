@@ -1,3 +1,4 @@
+// Importaciones de React y Material-UI
 import { useState, useRef } from 'react';
 import {
     Box,
@@ -13,41 +14,44 @@ import {
     Collapse,
     Fab
 } from '@mui/material';
+
+// Importación de iconos necesarios para la interfaz
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
+
+// Recursos y configuraciones
 import defaultImage from '../assets/default-character.png';
 import { useParams } from 'react-router-dom';
 import { getAuth } from 'firebase/auth';
 import { crearPersonaje } from '../services/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { storage } from '../firebase/config'; // Ajusta la ruta si es distinta
+import { storage } from '../firebase/config';
 import { doc, updateDoc, deleteDoc, writeBatch } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useEffect } from 'react';
-import { cargarPersonajes } from '../services/firestore'
+import { cargarPersonajes } from '../services/firestore';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 
-
-
 const PersonajesPage = () => {
-    const [personajes, setPersonajes] = useState([]);
-    const [busqueda, setBusqueda] = useState('');
-    const [mostrarDetalles, setMostrarDetalles] = useState({});
-    const [editandoPersonaje, setEditandoPersonaje] = useState({});
-    const [cambiosTemporales, setCambiosTemporales] = useState({});
-    const refsPersonajes = useRef({});
-    const { idLibro } = useParams();
-    const auth = getAuth();
-    const uid = auth.currentUser?.uid;
+    // Estados para gestionar los personajes y la interfaz
+    const [personajes, setPersonajes] = useState([]); // Lista de personajes
+    const [busqueda, setBusqueda] = useState(''); // Texto para filtrar personajes
+    const [mostrarDetalles, setMostrarDetalles] = useState({}); // Control de expansión de detalles
+    const [editandoPersonaje, setEditandoPersonaje] = useState({}); // Control de modo edición
+    const [cambiosTemporales, setCambiosTemporales] = useState({}); // Almacena cambios antes de guardar
     
+    // Referencias y parámetros
+    const refsPersonajes = useRef({}); // Referencias para scroll
+    const { idLibro } = useParams(); // ID del libro actual
+    const auth = getAuth();
+    const uid = auth.currentUser?.uid; // ID del usuario actual
 
-
-
+    // Función para crear un nuevo personaje
     const agregarPersonaje = async () => {
         const nuevo = {
-            nombre: 'Nuevo Personaje', // Nombre predeterminado
+            nombre: 'Nuevo Personaje',
             rol: '',
             descripcion: '',
             infoGeneral: '',
@@ -59,43 +63,36 @@ const PersonajesPage = () => {
         setPersonajes([...personajes, personajeCreado]);
     };
 
-
+    // Función para actualizar datos de un personaje
     const actualizarPersonaje = async (id, campo, valor) => {
-        // Actualizar en Firestore primero
         const ref = doc(db, 'users', uid, 'projects', idLibro, 'characters', id);
         await updateDoc(ref, { [campo]: valor });
-
-        // Actualizar el estado local después
         setPersonajes(prev => prev.map(p => 
             p.id === id ? { ...p, [campo]: valor } : p
         ));
     };
 
+    // Función para subir y actualizar la imagen de un personaje
     const subirImagen = async (archivo, idPersonaje) => {
         const nombreArchivo = `${Date.now()}-${archivo.name}`;
         const ruta = `gs://tfg-planificador-novelas.firebasestorage.app/${nombreArchivo}`;
         const storageRef = ref(storage, ruta);
         await uploadBytes(storageRef, archivo);
         const url = await getDownloadURL(storageRef);
-
-        // Usar actualizarPersonaje para la imagen
         await actualizarPersonaje(idPersonaje, 'imagen', url);
     };
 
-
+    // Función para guardar cambios después de editar
     const guardarEdicion = async (id) => {
         const cambios = cambiosTemporales[id];
         if (!cambios) return;
 
         try {
-            // Usar actualizarPersonaje para cada campo modificado
             const actualizaciones = Object.entries(cambios).map(([campo, valor]) => 
                 actualizarPersonaje(id, campo, valor)
             );
             
             await Promise.all(actualizaciones);
-
-            // Limpiar el estado de edición
             setEditandoPersonaje(prev => ({ ...prev, [id]: false }));
             setCambiosTemporales(prev => {
                 const newState = { ...prev };
@@ -107,23 +104,24 @@ const PersonajesPage = () => {
         }
     };
 
+    // Función para mostrar/ocultar detalles de un personaje
     const toggleDetalles = (id) => {
         setMostrarDetalles((prev) => ({ ...prev, [id]: !prev[id] }));
     };
 
+    // Filtrado de personajes según el texto de búsqueda
     const personajesFiltrados = personajes.filter((p) =>
         p.nombre.toLowerCase().includes(busqueda.toLowerCase())
     );
 
+    // Función para eliminar un personaje
     const eliminarPersonaje = async (idPersonaje) => {
-        // Eliminar el personaje de Firestore
         const personajeRef = doc(db, `users/${uid}/projects/${idLibro}/characters`, idPersonaje);
         await deleteDoc(personajeRef);
-
-        // Actualizar el estado local
         setPersonajes((prev) => prev.filter((p) => p.id !== idPersonaje));
     };
 
+    // Función para manejar el reordenamiento de personajes
     const handleDragEnd = async (result) => {
         if (!result.destination) return;
 
@@ -131,10 +129,8 @@ const PersonajesPage = () => {
         const [moved] = items.splice(result.source.index, 1);
         items.splice(result.destination.index, 0, moved);
 
-        // Actualiza localmente
         setPersonajes(items);
 
-        // Actualiza en Firestore (batch)
         const batch = writeBatch(db);
         items.forEach((personaje, index) => {
             const ref = doc(db, 'users', uid, 'projects', idLibro, 'characters', personaje.id);
@@ -143,6 +139,7 @@ const PersonajesPage = () => {
         await batch.commit();
     };
 
+    // Función para iniciar la edición de un personaje
     const iniciarEdicion = (id) => {
         setEditandoPersonaje(prev => ({ ...prev, [id]: true }));
         const personajeActual = personajes.find(p => p.id === id);
@@ -158,6 +155,7 @@ const PersonajesPage = () => {
         }));
     };
 
+    // Función para manejar cambios en los campos durante la edición
     const handleCambioTemporal = (id, campo, valor) => {
         setCambiosTemporales(prev => ({
             ...prev,
@@ -168,6 +166,7 @@ const PersonajesPage = () => {
         }));
     };
 
+    // Efecto para cargar los personajes al montar el componente
     useEffect(() => {
         const obtenerPersonajes = async () => {
             if (!uid || !idLibro) return;
@@ -180,9 +179,10 @@ const PersonajesPage = () => {
 
     return (
         <Box display="flex" height="100vh">
-            {/* Sidebar */}
+            {/* Barra lateral: Navegación rápida y búsqueda de personajes */}
             <Box width="20%" bgcolor="grey.200" p={2} sx={{ overflowY: 'auto' }}>
                 <Typography variant="h6" gutterBottom>Personajes</Typography>
+                {/* Campo de búsqueda para filtrar personajes */}
                 <TextField
                     fullWidth
                     placeholder="Buscar personajes"
@@ -190,6 +190,7 @@ const PersonajesPage = () => {
                     onChange={(e) => setBusqueda(e.target.value)}
                     sx={{ mb: 2 }}
                 />
+                {/* Lista de personajes con scroll automático */}
                 <List>
                     {personajesFiltrados.map((p) => (
                         <ListItem
@@ -203,8 +204,9 @@ const PersonajesPage = () => {
                 </List>
             </Box>
 
-            {/* Main Section */}
+            {/* Sección principal: Lista de tarjetas de personajes */}
             <Box flex={1} p={2} sx={{ overflowY: 'auto' }}>
+                {/* Contexto para drag and drop */}
                 <DragDropContext onDragEnd={handleDragEnd}>
                     <Droppable droppableId="personajes">
                         {(provided) => (
@@ -221,15 +223,19 @@ const PersonajesPage = () => {
                                                 {...provided.dragHandleProps}
                                                 sx={{ border: '1px solid #ccc', p: 2, mb: 2, backgroundColor: '#fdfdfd' }}
                                             >
+                                                {/* Cabecera del personaje: imagen, nombre y rol */}
                                                 <Box display="flex" justifyContent="space-between" alignItems="start">
                                                     <Box display="flex" alignItems="center" gap={2} flex={1}>
+                                                        {/* Avatar con función de actualización en modo edición */}
                                                         <Avatar
                                                             src={p.imagen}
                                                             alt={p.nombre}
                                                             sx={{ width: 96, height: 96, cursor: editandoPersonaje[p.id] ? 'pointer' : 'default' }}
                                                             onClick={() => editandoPersonaje[p.id] && document.getElementById(`input-img-${p.id}`)?.click()}
                                                         />
+                                                        {/* Contenedor de información básica */}
                                                         <Box flex={1}>
+                                                            {/* Nombre del personaje (modo edición/visualización) */}
                                                             {editandoPersonaje[p.id] ? (
                                                                 <TextField
                                                                     fullWidth
@@ -242,6 +248,7 @@ const PersonajesPage = () => {
                                                                     {p.nombre}
                                                                 </Typography>
                                                             )}
+                                                            {/* Rol del personaje (modo edición/visualización) */}
                                                             {editandoPersonaje[p.id] ? (
                                                                 <TextField
                                                                     fullWidth
@@ -257,6 +264,7 @@ const PersonajesPage = () => {
                                                             )}
                                                         </Box>
                                                     </Box>
+                                                    {/* Botones de acción (editar/guardar y eliminar) */}
                                                     <Box>
                                                         {editandoPersonaje[p.id] ? (
                                                             <IconButton onClick={() => guardarEdicion(p.id)}>
@@ -273,12 +281,16 @@ const PersonajesPage = () => {
                                                     </Box>
                                                 </Box>
 
+                                                {/* Botón para expandir/contraer detalles */}
                                                 <Button onClick={() => toggleDetalles(p.id)} sx={{ mb: 1 }}>
                                                     {mostrarDetalles[p.id] ? 'Ocultar detalles ▲' : 'Mostrar detalles ▼'}
                                                 </Button>
+
+                                                {/* Sección expandible con detalles adicionales */}
                                                 <Collapse in={mostrarDetalles[p.id]}>
                                                     {editandoPersonaje[p.id] ? (
                                                         <>
+                                                            {/* Campos de edición para detalles adicionales */}
                                                             <TextField
                                                                 fullWidth
                                                                 label="Información General"
@@ -309,6 +321,7 @@ const PersonajesPage = () => {
                                                         </>
                                                     ) : (
                                                         <>
+                                                            {/* Visualización de detalles adicionales */}
                                                             <Typography variant="subtitle1" gutterBottom fontWeight="bold">
                                                                 Información General:
                                                             </Typography>
@@ -330,6 +343,7 @@ const PersonajesPage = () => {
                                                         </>
                                                     )}
                                                 </Collapse>
+                                                {/* Input oculto para la subida de imágenes */}
                                                 <input
                                                     type="file"
                                                     accept="image/*"
@@ -350,6 +364,7 @@ const PersonajesPage = () => {
                     </Droppable>
                 </DragDropContext>
 
+                {/* Botón flotante para añadir nuevo personaje */}
                 <Fab
                     color="primary"
                     aria-label="add"
