@@ -97,5 +97,42 @@ export const eliminarLibro = async (req, res) => {
     }
 };
 
+export const actualizarLibro = async (req, res) => {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ error: 'Token no proporcionado' });
+    }
+
+    const token = authHeader.split(' ')[1];
+
+    try {
+        const decoded = await adminAuth.verifyIdToken(token);
+        const uid = decoded.uid;
+        const { id } = req.params;
+        const { title, description } = req.body;
+
+        if (!title && !description) {
+            return res.status(400).json({ error: 'No hay datos para actualizar' });
+        }
+
+        const ref = db.collection('users').doc(uid).collection('projects').doc(id);
+        const updateData = {};
+        
+        if (title) updateData.title = title;
+        if (description) updateData.description = description;
+
+        await ref.update(updateData);
+        
+        res.json({ 
+            message: `Libro ${id} actualizado correctamente`,
+            data: updateData
+        });
+    } catch (error) {
+        console.error('Error al actualizar libro:', error);
+        res.status(500).json({ error: 'Error al actualizar libro' });
+    }
+};
+
 
 

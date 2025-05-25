@@ -84,8 +84,23 @@ const MisLibrosPage = () => {
 
   const handleEditarLibro = async (idLibro, datos) => {
     try {
-      await updateBook(uid, idLibro, datos);
-      cargarLibros(); // Recargar la lista de libros
+      const token = await auth.currentUser.getIdToken();
+      
+      const res = await fetch(`http://localhost:3001/api/libros/${idLibro}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(datos)
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Error al actualizar el libro');
+      }
+
+      cargarLibros(); // Recargar la lista después de actualizar
     } catch (error) {
       console.error("Error editando libro:", error);
       alert("Error al editar el libro.");
