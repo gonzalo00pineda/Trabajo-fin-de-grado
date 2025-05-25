@@ -1,3 +1,6 @@
+// Componente para gestionar la línea temporal de eventos del libro
+// Permite crear, editar, eliminar y reordenar eventos, asignándoles una importancia y un capítulo relacionado
+
 import { useState, useEffect } from 'react';
 import {
     Box,
@@ -23,6 +26,7 @@ import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc, writeBatch, que
 import { db } from '../firebase/config';
 import { getAuth } from 'firebase/auth';
 
+// Componente que muestra una escala visual de importancia del 1 al 10
 const EscalaImportancia = ({ valor }) => {
     return (
         <Box display="flex" gap={1} my={1} justifyContent="center">
@@ -43,6 +47,7 @@ const EscalaImportancia = ({ valor }) => {
 };
 
 const LineaTemporalPage = () => {
+    // Estados para manejar los eventos y la interfaz
     const [eventos, setEventos] = useState([]);
     const [busqueda, setBusqueda] = useState('');
     const [busquedaCapitulo, setBusquedaCapitulo] = useState('');
@@ -59,6 +64,7 @@ const LineaTemporalPage = () => {
     const auth = getAuth();
     const uid = auth.currentUser?.uid;
 
+    // Carga los eventos desde Firestore ordenados por el campo 'orden'
     const cargarEventos = async () => {
         if (!uid || !idLibro) return;
         const ref = collection(db, 'users', uid, 'projects', idLibro, 'events');
@@ -72,6 +78,7 @@ const LineaTemporalPage = () => {
         cargarEventos();
     }, [uid, idLibro]);
 
+    // Maneja el reordenamiento de eventos mediante drag and drop
     const handleDragEnd = async (result) => {
         if (!result.destination) return;
 
@@ -89,6 +96,7 @@ const LineaTemporalPage = () => {
         await batch.commit();
     };
 
+    // Gestiona la apertura del diálogo para crear/editar eventos
     const abrirDialogo = (evento = null) => {
         if (evento) {
             setEventoEditando(evento);
@@ -105,6 +113,7 @@ const LineaTemporalPage = () => {
         setDialogoAbierto(true);
     };
 
+    // Cierra el diálogo y reinicia el formulario
     const cerrarDialogo = () => {
         setDialogoAbierto(false);
         setEventoEditando(null);
@@ -116,6 +125,7 @@ const LineaTemporalPage = () => {
         });
     };
 
+    // Guarda un nuevo evento o actualiza uno existente
     const guardarEvento = async () => {
         if (eventoEditando) {
             const ref = doc(db, 'users', uid, 'projects', idLibro, 'events', eventoEditando.id);
@@ -129,6 +139,7 @@ const LineaTemporalPage = () => {
         cerrarDialogo();
     };
 
+    // Elimina un evento después de confirmar con el usuario
     const eliminarEvento = async (id) => {
         if (!window.confirm('¿Estás seguro de que quieres eliminar este evento?')) return;
         
@@ -137,6 +148,7 @@ const LineaTemporalPage = () => {
         setEventos(eventos.filter(e => e.id !== id));
     };
 
+    // Filtra los eventos según los criterios de búsqueda
     const eventosFiltrados = eventos.filter(e => {
         const coincideTitulo = e.titulo.toLowerCase().includes(busqueda.toLowerCase());
         const coincideCapitulo = busquedaCapitulo === '' || e.capitulo.toString() === busquedaCapitulo;
@@ -145,6 +157,7 @@ const LineaTemporalPage = () => {
 
     return (
         <Box p={3}>
+            {/* Barra de búsqueda y filtros */}
             <Box mb={4} display="flex" gap={2} alignItems="center" justifyContent="center">
                 <TextField
                     sx={{ maxWidth: 300 }}
@@ -172,6 +185,7 @@ const LineaTemporalPage = () => {
                 </Button>
             </Box>
 
+            {/* Lista de eventos con drag and drop */}
             <DragDropContext onDragEnd={handleDragEnd}>
                 <Droppable droppableId="eventos">
                     {(provided) => (
@@ -217,6 +231,7 @@ const LineaTemporalPage = () => {
                 </Droppable>
             </DragDropContext>
 
+            {/* Diálogo para crear/editar eventos */}
             <Dialog open={dialogoAbierto} onClose={cerrarDialogo} maxWidth="sm" fullWidth>
                 <DialogTitle>
                     {eventoEditando ? 'Editar Evento' : 'Nuevo Evento'}

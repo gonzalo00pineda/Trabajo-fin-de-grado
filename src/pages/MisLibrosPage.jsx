@@ -1,3 +1,5 @@
+// Página principal que muestra la lista de libros del usuario
+// Permite crear nuevos libros y navegar a los detalles de cada libro
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Grid, Container, Typography, Button, Dialog, DialogTitle, DialogContent, Box } from '@mui/material';
@@ -9,31 +11,36 @@ import { getAuth } from "firebase/auth";
 import AddIcon from '@mui/icons-material/Add';
 
 const MisLibrosPage = () => {
+  // Estados para manejar la lista de libros y el diálogo de creación
   const [libros, setLibros] = useState([]);
   const [dialogoAbierto, setDialogoAbierto] = useState(false);
   const navigate = useNavigate();
   const uid = auth.currentUser?.uid;
 
-
+  // Función para cargar los libros del usuario desde Firestore
   const cargarLibros = useCallback(() => {
     if (!uid) return;
     getUserBooks(uid).then(setLibros).catch(console.error);
   }, [uid]);
 
+  // Efecto para cargar los libros cuando el componente se monta
   useEffect(() => {
     cargarLibros();
   }, [cargarLibros]);
 
+  // Efecto para obtener el token de autenticación
   useEffect(() => {
     getAuth().currentUser?.getIdToken().then(token => {
       console.log("Token de usuario:", token);
     });
   }, []);
 
+  // Navega a la vista de capítulos del libro seleccionado
   const handleSeleccionarLibro = (idLibro) => {
     navigate(`/libros/${idLibro}/capitulos`);
   };
 
+  // Maneja la eliminación de un libro
   const handleEliminarLibro = async (idLibro) => {
     const confirmacion = window.confirm("¿Estás seguro de que quieres eliminar este libro?");
     if (!confirmacion) return;
@@ -50,7 +57,7 @@ const MisLibrosPage = () => {
   
       if (res.ok) {
         alert("Libro eliminado correctamente");
-        cargarLibros(); // o setLibros(...) para actualizar la lista
+        cargarLibros(); 
       } else {
         const data = await res.json();
         alert("Error: " + data.error);
@@ -61,6 +68,7 @@ const MisLibrosPage = () => {
     }
   };
   
+  // Funciones para controlar el diálogo de creación de libro
   const abrirDialogo = () => {
     setDialogoAbierto(true);
   };
@@ -74,10 +82,13 @@ const MisLibrosPage = () => {
     cargarLibros();
   };
 
+  // Renderiza un mensaje de carga si no hay usuario autenticado
   if (!uid) return <p>Cargando usuario...</p>;
 
+  // Renderizado del componente
   return (
     <Container sx={{ mt: 4 }}>
+      {/* Encabezado con título y botón para crear nuevo libro */}
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
         <Typography variant="h4">Mis Libros</Typography>
         <Button
@@ -89,6 +100,7 @@ const MisLibrosPage = () => {
         </Button>
       </Box>
 
+      {/* Diálogo modal para crear nuevo libro */}
       <Dialog open={dialogoAbierto} onClose={cerrarDialogo} maxWidth="sm" fullWidth>
         <DialogTitle>Crear Nuevo Libro</DialogTitle>
         <DialogContent>
@@ -96,10 +108,15 @@ const MisLibrosPage = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Grid de tarjetas de libros */}
       <Grid container spacing={2}>
         {libros.map((libro) => (
           <Grid key={libro.id}>
-            <LibroCard libro={libro} onClick={handleSeleccionarLibro} onEliminar={() => handleEliminarLibro(libro.id)} />
+            <LibroCard 
+              libro={libro} 
+              onClick={handleSeleccionarLibro} 
+              onEliminar={() => handleEliminarLibro(libro.id)} 
+            />
           </Grid>
         ))}
       </Grid>
