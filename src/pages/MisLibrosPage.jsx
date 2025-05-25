@@ -1,15 +1,16 @@
-
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Grid, Container, Typography } from '@mui/material';
+import { Grid, Container, Typography, Button, Dialog, DialogTitle, DialogContent, Box } from '@mui/material';
 import LibroCard from '../components/LibroCard';
 import NuevoLibroForm from '../components/NuevoLibroForm';
 import { getUserBooks } from '../services/firestore';
 import { auth } from '../firebase/config';
 import { getAuth } from "firebase/auth";
+import AddIcon from '@mui/icons-material/Add';
 
 const MisLibrosPage = () => {
   const [libros, setLibros] = useState([]);
+  const [dialogoAbierto, setDialogoAbierto] = useState(false);
   const navigate = useNavigate();
   const uid = auth.currentUser?.uid;
 
@@ -60,16 +61,40 @@ const MisLibrosPage = () => {
     }
   };
   
+  const abrirDialogo = () => {
+    setDialogoAbierto(true);
+  };
 
+  const cerrarDialogo = () => {
+    setDialogoAbierto(false);
+  };
 
+  const handleLibroCreado = () => {
+    cerrarDialogo();
+    cargarLibros();
+  };
 
   if (!uid) return <p>Cargando usuario...</p>;
 
   return (
     <Container sx={{ mt: 4 }}>
-      <Typography variant="h4" gutterBottom>Mis Libros</Typography>
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
+        <Typography variant="h4">Mis Libros</Typography>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={abrirDialogo}
+        >
+          Nuevo Libro
+        </Button>
+      </Box>
 
-      <NuevoLibroForm uid={uid} onLibroCreado={cargarLibros} />
+      <Dialog open={dialogoAbierto} onClose={cerrarDialogo} maxWidth="sm" fullWidth>
+        <DialogTitle>Crear Nuevo Libro</DialogTitle>
+        <DialogContent>
+          <NuevoLibroForm uid={uid} onLibroCreado={handleLibroCreado} />
+        </DialogContent>
+      </Dialog>
 
       <Grid container spacing={2}>
         {libros.map((libro) => (

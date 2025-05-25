@@ -1,9 +1,8 @@
-
 // Este archivo define un formulario para crear un nuevo libro.
 
 
 import { useState } from 'react';
-import { TextField, Button, Box, Typography } from '@mui/material';
+import { TextField, Button, Box } from '@mui/material';
 import { subirImagenPortada, guardarLibro } from '../services/firestore';
 
 const NuevoLibroForm = ({ uid, onLibroCreado }) => {
@@ -31,7 +30,7 @@ const NuevoLibroForm = ({ uid, onLibroCreado }) => {
             setTitulo('');
             setDescripcion('');
             setPortada(null);
-            onLibroCreado(); // Refrescar lista
+            onLibroCreado(); // Cerrar diálogo y refrescar lista
 
         } catch (err) {
             console.error(err);
@@ -42,9 +41,7 @@ const NuevoLibroForm = ({ uid, onLibroCreado }) => {
     };
 
     return (
-        <Box component="form" onSubmit={handleSubmit} sx={{ mb: 4 }}>
-            <Typography variant="h6" gutterBottom>Nuevo Libro</Typography>
-
+        <Box component="form" onSubmit={handleSubmit}>
             <TextField
                 fullWidth
                 label="Título"
@@ -69,8 +66,14 @@ const NuevoLibroForm = ({ uid, onLibroCreado }) => {
                 style={{ margin: "1rem 0" }}
             />
 
-            <Button type="submit" variant="contained" disabled={subiendo}>
-                {subiendo ? 'Subiendo...' : 'Crear Libro'}
+            <Button 
+                type="submit" 
+                variant="contained" 
+                disabled={subiendo}
+                fullWidth
+                sx={{ mt: 2 }}
+            >
+                {subiendo ? 'Creando...' : 'Crear Libro'}
             </Button>
         </Box>
     );
