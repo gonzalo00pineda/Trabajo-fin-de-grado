@@ -62,12 +62,18 @@ const CapitulosPage = () => {
   };
 
   const actualizarCapitulo = async (id, campo, valor) => {
-    const actualizado = capitulos.map((c) =>
-      c.id === id ? { ...c, [campo]: valor } : c
-    );
-    setCapitulos(actualizado);
-    const ref = doc(db, 'users', uid, 'projects', idLibro, 'chapters', id);
-    await updateDoc(ref, { [campo]: valor });
+    try {
+      // Primero actualizar en Firestore
+      const ref = doc(db, 'users', uid, 'projects', idLibro, 'chapters', id);
+      await updateDoc(ref, { [campo]: valor });
+      
+      // Después actualizar el estado local
+      setCapitulos(prev => prev.map(c => 
+        c.id === id ? { ...c, [campo]: valor } : c
+      ));
+    } catch (error) {
+      console.error('Error al actualizar capítulo:', error);
+    }
   };
 
   const eliminarCapitulo = async (id) => {
@@ -134,21 +140,38 @@ const CapitulosPage = () => {
     const cambios = cambiosTemporales[id];
     if (!cambios) return;
 
-    // Actualizar el título
-    const tituloFinal = cambios.titulo?.trim() || `Capítulo ${capitulos.findIndex(c => c.id === id) + 1}`;
-    await actualizarCapitulo(id, 'titulo', tituloFinal);
+    try {
+      // Crear un objeto con todos los cambios
+      const actualizaciones = {};
+      
+      // Actualizar el título
+      const tituloFinal = cambios.titulo?.trim() || `Capítulo ${capitulos.findIndex(c => c.id === id) + 1}`;
+      actualizaciones.titulo = tituloFinal;
+      
+      // Actualizar el resumen si hay cambios
+      if (cambios.resumen !== undefined) {
+        actualizaciones.resumen = cambios.resumen;
+      }
 
-    // Actualizar el resumen si hay cambios
-    if (cambios.resumen !== undefined) {
-      await actualizarCapitulo(id, 'resumen', cambios.resumen);
+      // Actualizar todo en una sola operación
+      const ref = doc(db, 'users', uid, 'projects', idLibro, 'chapters', id);
+      await updateDoc(ref, actualizaciones);
+      
+      // Actualizar el estado local
+      setCapitulos(prev => prev.map(c => 
+        c.id === id ? { ...c, ...actualizaciones } : c
+      ));
+
+      // Limpiar el estado de edición
+      setEditandoCapitulo(prev => ({ ...prev, [id]: false }));
+      setCambiosTemporales(prev => {
+        const newState = { ...prev };
+        delete newState[id];
+        return newState;
+      });
+    } catch (error) {
+      console.error('Error al guardar la edición:', error);
     }
-    
-    setEditandoCapitulo(prev => ({ ...prev, [id]: false }));
-    setCambiosTemporales(prev => {
-      const newState = { ...prev };
-      delete newState[id];
-      return newState;
-    });
   };
 
   useEffect(() => {
