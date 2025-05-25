@@ -5,7 +5,7 @@ import { Card, CardContent, CardMedia, Typography, IconButton, Box, TextField } 
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
-import defaultCover from '../assets/logoNovplax.png';
+import defaultCover from '../assets/LogoApp.png';
 import { useState } from 'react';
 
 const LibroCard = ({ libro, onClick, onEliminar, onEditar }) => {
