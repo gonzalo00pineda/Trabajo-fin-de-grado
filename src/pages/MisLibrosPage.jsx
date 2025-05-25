@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { Grid, Container, Typography, Button, Dialog, DialogTitle, DialogContent, Box } from '@mui/material';
 import LibroCard from '../components/LibroCard';
 import NuevoLibroForm from '../components/NuevoLibroForm';
-import { getUserBooks, updateBook } from '../services/firestore';
+import { getUserBooks } from '../services/firestore';
 import { auth } from '../firebase/config';
 import { getAuth } from "firebase/auth";
 import AddIcon from '@mui/icons-material/Add';
