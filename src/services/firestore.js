@@ -5,7 +5,7 @@
 
 
 
-import { collection, addDoc, getDocs, query, orderBy } from 'firebase/firestore';
+import { collection, addDoc, getDocs, query, orderBy, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../firebase/config'; // ahora necesitaremos storage también
 import { doc, getDoc } from 'firebase/firestore';
@@ -77,6 +77,12 @@ export const getChapters = async (uid, libroId) => {
 export const guardarCapitulo = async (uid, libroId, data) => {
     const ref = collection(db, 'users', uid, 'projects', libroId, 'chapters');
     await addDoc(ref, data);
+};
+
+// actualiza un libro existente en Firestore
+export const updateBook = async (uid, bookId, data) => {
+    const bookRef = doc(db, 'users', uid, 'projects', bookId);
+    await updateDoc(bookRef, data);
 };
 
 

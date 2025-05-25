@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { Grid, Container, Typography, Button, Dialog, DialogTitle, DialogContent, Box } from '@mui/material';
 import LibroCard from '../components/LibroCard';
 import NuevoLibroForm from '../components/NuevoLibroForm';
-import { getUserBooks } from '../services/firestore';
+import { getUserBooks, updateBook } from '../services/firestore';
 import { auth } from '../firebase/config';
 import { getAuth } from "firebase/auth";
 import AddIcon from '@mui/icons-material/Add';
@@ -67,7 +67,7 @@ const MisLibrosPage = () => {
       alert("Error en la conexión con el servidor.");
     }
   };
-  
+
   // Funciones para controlar el diálogo de creación de libro
   const abrirDialogo = () => {
     setDialogoAbierto(true);
@@ -80,6 +80,16 @@ const MisLibrosPage = () => {
   const handleLibroCreado = () => {
     cerrarDialogo();
     cargarLibros();
+  };
+
+  const handleEditarLibro = async (idLibro, datos) => {
+    try {
+      await updateBook(uid, idLibro, datos);
+      cargarLibros(); // Recargar la lista de libros
+    } catch (error) {
+      console.error("Error editando libro:", error);
+      alert("Error al editar el libro.");
+    }
   };
 
   // Renderiza un mensaje de carga si no hay usuario autenticado
@@ -115,7 +125,8 @@ const MisLibrosPage = () => {
             <LibroCard 
               libro={libro} 
               onClick={handleSeleccionarLibro} 
-              onEliminar={() => handleEliminarLibro(libro.id)} 
+              onEliminar={() => handleEliminarLibro(libro.id)}
+              onEditar={handleEditarLibro}
             />
           </Grid>
         ))}
