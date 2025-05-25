@@ -60,27 +60,6 @@ const PersonajesPage = () => {
     };
 
 
-    const subirImagen = async (archivo, idPersonaje) => {
-        const nombreArchivo = `${Date.now()}-${archivo.name}`;
-        const ruta = `gs://tfg-planificador-novelas.firebasestorage.app/${nombreArchivo}`;
-        const storageRef = ref(storage, ruta);
-        await uploadBytes(storageRef, archivo);
-        const url = await getDownloadURL(storageRef);
-
-        // Actualizar en Firestore
-        const refDoc = doc(db, 'users', uid, 'projects', idLibro, 'characters', idPersonaje);
-        await updateDoc(refDoc, { imagen: url });
-
-
-        // Actualizar en el estado local
-        setPersonajes((prev) =>
-            prev.map((p) =>
-                p.id === idPersonaje ? { ...p, imagen: url } : p
-            )
-        );
-    };
-
-
     const actualizarPersonaje = async (id, campo, valor) => {
         // Actualizar en Firestore primero
         const ref = doc(db, 'users', uid, 'projects', idLibro, 'characters', id);
@@ -90,6 +69,42 @@ const PersonajesPage = () => {
         setPersonajes(prev => prev.map(p => 
             p.id === id ? { ...p, [campo]: valor } : p
         ));
+    };
+
+    const subirImagen = async (archivo, idPersonaje) => {
+        const nombreArchivo = `${Date.now()}-${archivo.name}`;
+        const ruta = `gs://tfg-planificador-novelas.firebasestorage.app/${nombreArchivo}`;
+        const storageRef = ref(storage, ruta);
+        await uploadBytes(storageRef, archivo);
+        const url = await getDownloadURL(storageRef);
+
+        // Usar actualizarPersonaje para la imagen
+        await actualizarPersonaje(idPersonaje, 'imagen', url);
+    };
+
+
+    const guardarEdicion = async (id) => {
+        const cambios = cambiosTemporales[id];
+        if (!cambios) return;
+
+        try {
+            // Usar actualizarPersonaje para cada campo modificado
+            const actualizaciones = Object.entries(cambios).map(([campo, valor]) => 
+                actualizarPersonaje(id, campo, valor)
+            );
+            
+            await Promise.all(actualizaciones);
+
+            // Limpiar el estado de edición
+            setEditandoPersonaje(prev => ({ ...prev, [id]: false }));
+            setCambiosTemporales(prev => {
+                const newState = { ...prev };
+                delete newState[id];
+                return newState;
+            });
+        } catch (error) {
+            console.error('Error al guardar los cambios:', error);
+        }
     };
 
     const toggleDetalles = (id) => {
@@ -141,32 +156,6 @@ const PersonajesPage = () => {
                 relaciones: personajeActual.relaciones
             }
         }));
-    };
-
-    const guardarEdicion = async (id) => {
-        const cambios = cambiosTemporales[id];
-        if (!cambios) return;
-
-        try {
-            const ref = doc(db, 'users', uid, 'projects', idLibro, 'characters', id);
-            // Actualizar todos los campos en una sola operación en Firestore
-            await updateDoc(ref, cambios);
-
-            // Actualizar el estado local
-            setPersonajes(prev => prev.map(p => 
-                p.id === id ? { ...p, ...cambios } : p
-            ));
-
-            // Limpiar el estado de edición
-            setEditandoPersonaje(prev => ({ ...prev, [id]: false }));
-            setCambiosTemporales(prev => {
-                const newState = { ...prev };
-                delete newState[id];
-                return newState;
-            });
-        } catch (error) {
-            console.error('Error al guardar los cambios:', error);
-        }
     };
 
     const handleCambioTemporal = (id, campo, valor) => {
@@ -320,19 +309,19 @@ const PersonajesPage = () => {
                                                         </>
                                                     ) : (
                                                         <>
-                                                            <Typography variant="subtitle1" gutterBottom>
+                                                            <Typography variant="subtitle1" gutterBottom fontWeight="bold">
                                                                 Información General:
                                                             </Typography>
                                                             <Typography paragraph>
                                                                 {p.infoGeneral || 'Sin información general'}
                                                             </Typography>
-                                                            <Typography variant="subtitle1" gutterBottom>
+                                                            <Typography variant="subtitle1" gutterBottom fontWeight="bold">
                                                                 Descripción:
                                                             </Typography>
                                                             <Typography paragraph>
                                                                 {p.descripcion || 'Sin descripción'}
                                                             </Typography>
-                                                            <Typography variant="subtitle1" gutterBottom>
+                                                            <Typography variant="subtitle1" gutterBottom fontWeight="bold">
                                                                 Relaciones:
                                                             </Typography>
                                                             <Typography paragraph>
