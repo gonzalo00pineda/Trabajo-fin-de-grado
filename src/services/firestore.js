@@ -1,4 +1,3 @@
-
 // En este archivo se definen las funciones para interactuar con Firestore
 // Importar las funciones necesarias de Firebase
 // Importar la configuración de Firebase
@@ -6,7 +5,7 @@
 
 
 
-import { collection, addDoc, getDocs } from 'firebase/firestore';
+import { collection, addDoc, getDocs, query, orderBy } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../firebase/config'; // ahora necesitaremos storage también
 import { doc, getDoc } from 'firebase/firestore';
@@ -15,14 +14,18 @@ import { doc, getDoc } from 'firebase/firestore';
 // y lo asocia al libro correspondiente
 export const crearPersonaje = async (uid, projectId, personaje) => {
     const refPersonajes = collection(db, 'users', uid, 'projects', projectId, 'characters');
-    const docRef = await addDoc(refPersonajes, personaje);
-    return { ...personaje, id: docRef.id };
+    // Obtener el número total de personajes para asignar el orden
+    const snap = await getDocs(refPersonajes);
+    const orden = snap.size;
+    const docRef = await addDoc(refPersonajes, { ...personaje, orden });
+    return { ...personaje, id: docRef.id, orden };
 };
 
 // obtiene la lista de personajes de un libro desde Firestore
 export const cargarPersonajes = async (uid, projectId) => {
     const ref = collection(db, 'users', uid, 'projects', projectId, 'characters');
-    const snap = await getDocs(ref);
+    const q = query(ref, orderBy('orden', 'asc'));
+    const snap = await getDocs(q);
 
     return snap.docs.map(doc => ({
         id: doc.id,
