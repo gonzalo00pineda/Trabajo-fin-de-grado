@@ -15,6 +15,8 @@ import {
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
+import EditIcon from '@mui/icons-material/Edit';
+import SaveIcon from '@mui/icons-material/Save';
 import defaultImage from '../assets/default-character.png';
 import { useParams } from 'react-router-dom';
 import { getAuth } from 'firebase/auth';
@@ -31,9 +33,10 @@ import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 
 const PersonajesPage = () => {
     const [personajes, setPersonajes] = useState([]);
-
     const [busqueda, setBusqueda] = useState('');
     const [mostrarDetalles, setMostrarDetalles] = useState({});
+    const [editandoPersonaje, setEditandoPersonaje] = useState({});
+    const [cambiosTemporales, setCambiosTemporales] = useState({});
     const refsPersonajes = useRef({});
     const { idLibro } = useParams();
     const auth = getAuth();
@@ -79,13 +82,14 @@ const PersonajesPage = () => {
 
 
     const actualizarPersonaje = async (id, campo, valor) => {
-        const actualizados = personajes.map((p) =>
-            p.id === id ? { ...p, [campo]: valor } : p
-        );
-        setPersonajes(actualizados);
-    
+        // Actualizar en Firestore primero
         const ref = doc(db, 'users', uid, 'projects', idLibro, 'characters', id);
         await updateDoc(ref, { [campo]: valor });
+
+        // Actualizar el estado local después
+        setPersonajes(prev => prev.map(p => 
+            p.id === id ? { ...p, [campo]: valor } : p
+        ));
     };
 
     const toggleDetalles = (id) => {
@@ -124,6 +128,57 @@ const PersonajesPage = () => {
         await batch.commit();
     };
 
+    const iniciarEdicion = (id) => {
+        setEditandoPersonaje(prev => ({ ...prev, [id]: true }));
+        const personajeActual = personajes.find(p => p.id === id);
+        setCambiosTemporales(prev => ({
+            ...prev,
+            [id]: {
+                nombre: personajeActual.nombre,
+                rol: personajeActual.rol,
+                infoGeneral: personajeActual.infoGeneral,
+                descripcion: personajeActual.descripcion,
+                relaciones: personajeActual.relaciones
+            }
+        }));
+    };
+
+    const guardarEdicion = async (id) => {
+        const cambios = cambiosTemporales[id];
+        if (!cambios) return;
+
+        try {
+            const ref = doc(db, 'users', uid, 'projects', idLibro, 'characters', id);
+            // Actualizar todos los campos en una sola operación en Firestore
+            await updateDoc(ref, cambios);
+
+            // Actualizar el estado local
+            setPersonajes(prev => prev.map(p => 
+                p.id === id ? { ...p, ...cambios } : p
+            ));
+
+            // Limpiar el estado de edición
+            setEditandoPersonaje(prev => ({ ...prev, [id]: false }));
+            setCambiosTemporales(prev => {
+                const newState = { ...prev };
+                delete newState[id];
+                return newState;
+            });
+        } catch (error) {
+            console.error('Error al guardar los cambios:', error);
+        }
+    };
+
+    const handleCambioTemporal = (id, campo, valor) => {
+        setCambiosTemporales(prev => ({
+            ...prev,
+            [id]: {
+                ...prev[id],
+                [campo]: valor
+            }
+        }));
+    };
+
     useEffect(() => {
         const obtenerPersonajes = async () => {
             if (!uid || !idLibro) return;
@@ -136,140 +191,185 @@ const PersonajesPage = () => {
 
     return (
         <Box display="flex" height="100vh">
-        {/* Sidebar */}
-        <Box width="20%" bgcolor="grey.200" p={2} sx={{ overflowY: 'auto' }}>
-            <Typography variant="h6" gutterBottom>Personajes</Typography>
-            <TextField
-            fullWidth
-            placeholder="Buscar personajes"
-            value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
-            sx={{ mb: 2 }}
-            />
-            <List>
-            {personajesFiltrados.map((p) => (
-                <ListItem
-                key={p.id}
-                button="true"
-                onClick={() => refsPersonajes.current[p.id]?.scrollIntoView({ behavior: 'smooth' })}
-                >
-                <ListItemText primary={p.nombre} />
-                </ListItem>
-            ))}
-            </List>
-        </Box>
+            {/* Sidebar */}
+            <Box width="20%" bgcolor="grey.200" p={2} sx={{ overflowY: 'auto' }}>
+                <Typography variant="h6" gutterBottom>Personajes</Typography>
+                <TextField
+                    fullWidth
+                    placeholder="Buscar personajes"
+                    value={busqueda}
+                    onChange={(e) => setBusqueda(e.target.value)}
+                    sx={{ mb: 2 }}
+                />
+                <List>
+                    {personajesFiltrados.map((p) => (
+                        <ListItem
+                            key={p.id}
+                            button="true"
+                            onClick={() => refsPersonajes.current[p.id]?.scrollIntoView({ behavior: 'smooth' })}
+                        >
+                            <ListItemText primary={p.nombre} />
+                        </ListItem>
+                    ))}
+                </List>
+            </Box>
 
-        {/* Main Section */}
-        <Box flex={1} p={2} sx={{ overflowY: 'auto' }}>
-            <DragDropContext onDragEnd={handleDragEnd}>
-                <Droppable droppableId="personajes">
-                    {(provided) => (
-                        <div {...provided.droppableProps} ref={provided.innerRef}>
-                            {personajes.map((p, index) => (
-                                <Draggable key={p.id} draggableId={p.id} index={index}>
-                                    {(provided) => (
-                                        <Box
-                                            ref={(el) => {
-                                                provided.innerRef(el);
-                                                refsPersonajes.current[p.id] = el;
-                                            }}
-                                            {...provided.draggableProps}
-                                            {...provided.dragHandleProps}
-                                            sx={{ border: '1px solid #ccc', p: 2, mb: 2, backgroundColor: '#fdfdfd' }}
-                                        >
-                                            <Box display="flex" alignItems="center" gap={2}>
-                                                <Avatar
-                                                    src={p.imagen}
-                                                    alt={p.nombre}
-                                                    sx={{ width: 96, height: 96, cursor: 'pointer' }}
-                                                    onClick={() => document.getElementById(`input-img-${p.id}`)?.click()}
-                                                />
-                                                <Box flex={1}>
-                                                    <TextField
-                                                        fullWidth
-                                                        label="Nombre"
-                                                        value={p.nombre}
-                                                        onChange={(e) => actualizarPersonaje(p.id, 'nombre', e.target.value)}
-                                                        margin="normal"
-                                                    />
-                                                    <TextField
-                                                        fullWidth
-                                                        label="Rol"
-                                                        value={p.rol}
-                                                        onChange={(e) => actualizarPersonaje(p.id, 'rol', e.target.value)}
-                                                        margin="normal"
-                                                    />
-                                                </Box>
-                                                <IconButton
-                                                    aria-label="delete"
-                                                    onClick={() => eliminarPersonaje(p.id)}
-                                                    sx={{ marginLeft: 'auto' }}
-                                                >
-                                                    <DeleteIcon />
-                                                </IconButton>
-                                            </Box>
-
-                                            <Button onClick={() => toggleDetalles(p.id)} sx={{ mb: 1 }}>
-                                                {mostrarDetalles[p.id] ? 'Ocultar detalles ▲' : 'Mostrar detalles ▼'}
-                                            </Button>
-                                            <Collapse in={mostrarDetalles[p.id]}>
-                                                <TextField
-                                                    fullWidth
-                                                    label="Información General"
-                                                    value={p.infoGeneral}
-                                                    onChange={(e) => actualizarPersonaje(p.id, 'infoGeneral', e.target.value)}
-                                                    margin="normal"
-                                                    multiline
-                                                    rows={3}
-                                                />
-                                                <TextField
-                                                    fullWidth
-                                                    label="Descripción"
-                                                    value={p.descripcion}
-                                                    onChange={(e) => actualizarPersonaje(p.id, 'descripcion', e.target.value)}
-                                                    margin="normal"
-                                                    multiline
-                                                    rows={3}
-                                                />
-                                                <TextField
-                                                    fullWidth
-                                                    label="Relación con otros personajes"
-                                                    value={p.relaciones}
-                                                    onChange={(e) => actualizarPersonaje(p.id, 'relaciones', e.target.value)}
-                                                    margin="normal"
-                                                    multiline
-                                                    rows={3}
-                                                />
-                                            </Collapse>
-                                            <input
-                                                type="file"
-                                                accept="image/*"
-                                                id={`input-img-${p.id}`}
-                                                style={{ display: 'none' }}
-                                                onChange={(e) => {
-                                                    const archivo = e.target.files[0];
-                                                    if (archivo) subirImagen(archivo, p.id);
+            {/* Main Section */}
+            <Box flex={1} p={2} sx={{ overflowY: 'auto' }}>
+                <DragDropContext onDragEnd={handleDragEnd}>
+                    <Droppable droppableId="personajes">
+                        {(provided) => (
+                            <div {...provided.droppableProps} ref={provided.innerRef}>
+                                {personajes.map((p, index) => (
+                                    <Draggable key={p.id} draggableId={p.id} index={index}>
+                                        {(provided) => (
+                                            <Box
+                                                ref={(el) => {
+                                                    provided.innerRef(el);
+                                                    refsPersonajes.current[p.id] = el;
                                                 }}
-                                            />
-                                        </Box>
-                                    )}
-                                </Draggable>
-                            ))}
-                            {provided.placeholder}
-                        </div>
-                    )}
-                </Droppable>
-            </DragDropContext>
+                                                {...provided.draggableProps}
+                                                {...provided.dragHandleProps}
+                                                sx={{ border: '1px solid #ccc', p: 2, mb: 2, backgroundColor: '#fdfdfd' }}
+                                            >
+                                                <Box display="flex" justifyContent="space-between" alignItems="start">
+                                                    <Box display="flex" alignItems="center" gap={2} flex={1}>
+                                                        <Avatar
+                                                            src={p.imagen}
+                                                            alt={p.nombre}
+                                                            sx={{ width: 96, height: 96, cursor: editandoPersonaje[p.id] ? 'pointer' : 'default' }}
+                                                            onClick={() => editandoPersonaje[p.id] && document.getElementById(`input-img-${p.id}`)?.click()}
+                                                        />
+                                                        <Box flex={1}>
+                                                            {editandoPersonaje[p.id] ? (
+                                                                <TextField
+                                                                    fullWidth
+                                                                    value={cambiosTemporales[p.id]?.nombre || p.nombre}
+                                                                    onChange={(e) => handleCambioTemporal(p.id, 'nombre', e.target.value)}
+                                                                    margin="normal"
+                                                                />
+                                                            ) : (
+                                                                <Typography variant="h5" sx={{ mt: 1 }}>
+                                                                    {p.nombre}
+                                                                </Typography>
+                                                            )}
+                                                            {editandoPersonaje[p.id] ? (
+                                                                <TextField
+                                                                    fullWidth
+                                                                    label="Rol"
+                                                                    value={cambiosTemporales[p.id]?.rol || p.rol}
+                                                                    onChange={(e) => handleCambioTemporal(p.id, 'rol', e.target.value)}
+                                                                    margin="normal"
+                                                                />
+                                                            ) : (
+                                                                <Typography color="textSecondary">
+                                                                    {p.rol || 'Sin rol asignado'}
+                                                                </Typography>
+                                                            )}
+                                                        </Box>
+                                                    </Box>
+                                                    <Box>
+                                                        {editandoPersonaje[p.id] ? (
+                                                            <IconButton onClick={() => guardarEdicion(p.id)}>
+                                                                <SaveIcon />
+                                                            </IconButton>
+                                                        ) : (
+                                                            <IconButton onClick={() => iniciarEdicion(p.id)}>
+                                                                <EditIcon />
+                                                            </IconButton>
+                                                        )}
+                                                        <IconButton onClick={() => eliminarPersonaje(p.id)}>
+                                                            <DeleteIcon />
+                                                        </IconButton>
+                                                    </Box>
+                                                </Box>
 
-            <Fab
-            color="primary"
-            aria-label="add"
-            onClick={agregarPersonaje}
-            sx={{ position: 'fixed', bottom: 16, right: 16 }}
-            >
-            <AddIcon />
-            </Fab>
-        </Box>
+                                                <Button onClick={() => toggleDetalles(p.id)} sx={{ mb: 1 }}>
+                                                    {mostrarDetalles[p.id] ? 'Ocultar detalles ▲' : 'Mostrar detalles ▼'}
+                                                </Button>
+                                                <Collapse in={mostrarDetalles[p.id]}>
+                                                    {editandoPersonaje[p.id] ? (
+                                                        <>
+                                                            <TextField
+                                                                fullWidth
+                                                                label="Información General"
+                                                                value={cambiosTemporales[p.id]?.infoGeneral || p.infoGeneral}
+                                                                onChange={(e) => handleCambioTemporal(p.id, 'infoGeneral', e.target.value)}
+                                                                margin="normal"
+                                                                multiline
+                                                                rows={3}
+                                                            />
+                                                            <TextField
+                                                                fullWidth
+                                                                label="Descripción"
+                                                                value={cambiosTemporales[p.id]?.descripcion || p.descripcion}
+                                                                onChange={(e) => handleCambioTemporal(p.id, 'descripcion', e.target.value)}
+                                                                margin="normal"
+                                                                multiline
+                                                                rows={3}
+                                                            />
+                                                            <TextField
+                                                                fullWidth
+                                                                label="Relación con otros personajes"
+                                                                value={cambiosTemporales[p.id]?.relaciones || p.relaciones}
+                                                                onChange={(e) => handleCambioTemporal(p.id, 'relaciones', e.target.value)}
+                                                                margin="normal"
+                                                                multiline
+                                                                rows={3}
+                                                            />
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <Typography variant="subtitle1" gutterBottom>
+                                                                Información General:
+                                                            </Typography>
+                                                            <Typography paragraph>
+                                                                {p.infoGeneral || 'Sin información general'}
+                                                            </Typography>
+                                                            <Typography variant="subtitle1" gutterBottom>
+                                                                Descripción:
+                                                            </Typography>
+                                                            <Typography paragraph>
+                                                                {p.descripcion || 'Sin descripción'}
+                                                            </Typography>
+                                                            <Typography variant="subtitle1" gutterBottom>
+                                                                Relaciones:
+                                                            </Typography>
+                                                            <Typography paragraph>
+                                                                {p.relaciones || 'Sin relaciones definidas'}
+                                                            </Typography>
+                                                        </>
+                                                    )}
+                                                </Collapse>
+                                                <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    id={`input-img-${p.id}`}
+                                                    style={{ display: 'none' }}
+                                                    onChange={(e) => {
+                                                        const archivo = e.target.files[0];
+                                                        if (archivo) subirImagen(archivo, p.id);
+                                                    }}
+                                                />
+                                            </Box>
+                                        )}
+                                    </Draggable>
+                                ))}
+                                {provided.placeholder}
+                            </div>
+                        )}
+                    </Droppable>
+                </DragDropContext>
+
+                <Fab
+                    color="primary"
+                    aria-label="add"
+                    onClick={agregarPersonaje}
+                    sx={{ position: 'fixed', bottom: 16, right: 16 }}
+                >
+                    <AddIcon />
+                </Fab>
+            </Box>
         </Box>
     );
 };
