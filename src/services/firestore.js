@@ -1,9 +1,16 @@
-// En este archivo se definen las funciones para interactuar con Firestore
-// Importar las funciones necesarias de Firebase
-// Importar la configuración de Firebase
-// y la inicialización de la aplicación
-
-
+/**
+ * Servicio de Operaciones con Firestore
+ * 
+ * Este módulo centraliza todas las operaciones de base de datos de la aplicación,
+ * gestionando la interacción con Firebase Firestore y Storage. Proporciona funciones para:
+ * - Gestión de libros (crear, leer, actualizar)
+ * - Gestión de personajes (crear, ordenar, listar)
+ * - Gestión de capítulos
+ * - Manejo de archivos (subida de imágenes de portada)
+ * 
+ * La estructura de datos sigue una jerarquía:
+ * users/{uid}/projects/{projectId}/[characters|chapters]
+ */
 
 import { collection, addDoc, getDocs, query, orderBy, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';

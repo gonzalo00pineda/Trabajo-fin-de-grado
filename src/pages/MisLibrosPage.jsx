@@ -1,5 +1,6 @@
 // Página principal que muestra la lista de libros del usuario
 // Permite crear nuevos libros y navegar a los detalles de cada libro
+
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Grid, Container, Typography, Button, Dialog, DialogTitle, DialogContent, Box } from '@mui/material';
@@ -28,7 +29,8 @@ const MisLibrosPage = () => {
     cargarLibros();
   }, [cargarLibros]);
 
-  // Efecto para obtener el token de autenticación
+  // Efecto para obtener el token de autenticación BORRAR ANTES DE PRODUCCIÓN
+  // Esto es solo para propósitos de depuración y no debería estar en producción
   useEffect(() => {
     getAuth().currentUser?.getIdToken().then(token => {
       console.log("Token de usuario:", token);

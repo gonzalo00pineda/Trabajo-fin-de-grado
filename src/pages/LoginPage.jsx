@@ -1,15 +1,32 @@
+/**
+ * Página de Autenticación
+ * 
+ * Este componente maneja tanto el inicio de sesión como el registro de usuarios.
+ * Características principales:
+ * - Formulario dual (login/registro) con cambio dinámico
+ * - Validación de correo y contraseña
+ * - Integración con Firebase Authentication
+ * - Redirección automática tras autenticación exitosa
+ * - Diseño responsivo y amigable
+ */
+
 import { useState } from 'react';
 import { registrarUsuario, iniciarSesion } from '../services/auth';
 import { useNavigate } from 'react-router-dom';
 import LogoApp from '../assets/LogoApp.png';
 
-
 const LoginPage = () => {
+  // Estados para manejar el formulario
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [modoRegistro, setModoRegistro] = useState(false);
   const navigate = useNavigate();
 
+  /**
+   * Maneja el envío del formulario
+   * Realiza el registro o inicio de sesión según el modo actual
+   * y redirige al usuario a la página de libros si es exitoso
+   */
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -25,6 +42,7 @@ const LoginPage = () => {
   };
 
   return (
+    // Contenedor principal con fondo gris claro
     <div style={{
       display: 'flex',
       flexDirection: 'column',
@@ -34,6 +52,7 @@ const LoginPage = () => {
       padding: '2rem',
       backgroundColor: '#f5f5f5'
     }}>
+      {/* Logo de la aplicación */}
       <img 
         src={LogoApp} 
         alt="Logo de la aplicación" 
@@ -42,6 +61,7 @@ const LoginPage = () => {
           marginBottom: '2rem'
         }}
       />
+      {/* Tarjeta del formulario */}
       <div style={{
         backgroundColor: 'white',
         padding: '2rem',
@@ -50,6 +70,7 @@ const LoginPage = () => {
         width: '100%',
         maxWidth: '400px'
       }}>
+        {/* Título dinámico según el modo */}
         <h2 style={{
           textAlign: 'center',
           marginBottom: '2rem',
@@ -57,7 +78,9 @@ const LoginPage = () => {
         }}>
           {modoRegistro ? 'Crear cuenta' : 'Iniciar sesión'}
         </h2>
+        {/* Formulario de autenticación */}
         <form onSubmit={handleSubmit} style={{ width: '100%' }}>
+          {/* Campo de correo electrónico */}
           <input
             type="email"
             placeholder="Correo"
@@ -73,6 +96,7 @@ const LoginPage = () => {
               fontSize: '1rem'
             }}
           />
+          {/* Campo de contraseña */}
           <input
             type="password"
             placeholder="Contraseña"
@@ -88,6 +112,7 @@ const LoginPage = () => {
               fontSize: '1rem'
             }}
           />
+          {/* Botón de envío */}
           <button 
             type="submit"
             style={{
@@ -105,6 +130,7 @@ const LoginPage = () => {
             {modoRegistro ? 'Registrarse' : 'Entrar'}
           </button>
         </form>
+        {/* Enlace para cambiar entre modos de registro y login */}
         <p style={{ 
           textAlign: 'center', 
           marginTop: '1rem',

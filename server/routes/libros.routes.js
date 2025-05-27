@@ -1,3 +1,10 @@
+/**
+ * Configuración de rutas para la gestión de libros
+ * Este archivo define todos los endpoints relacionados con las operaciones CRUD de libros.
+ * Utiliza el Router de Express para manejar las diferentes rutas HTTP y conectarlas
+ * con sus respectivos controladores.
+ */
+
 import { Router } from 'express';
 import {
     obtenerLibros,

@@ -1,3 +1,19 @@
+/**
+ * Página de Gestión de Personajes
+ * 
+ * Este componente gestiona la visualización y edición de personajes de una novela.
+ * Características principales:
+ * - Lista ordenable de personajes con drag & drop
+ * - Búsqueda y filtrado de personajes
+ * - Edición completa de la información de cada personaje:
+ *   - Datos básicos (nombre, rol)
+ *   - Información detallada (descripción, información general, relaciones)
+ *   - Gestión de avatares/imágenes
+ * - Navegación rápida mediante barra lateral
+ * - Integración con Firebase para persistencia de datos
+ * - Interfaz responsive con Material-UI
+ */
+
 // Importaciones de React y Material-UI
 import { useState, useRef } from 'react';
 import {

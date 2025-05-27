@@ -1,7 +1,7 @@
 /*
 
 index.css
-Se suele usar para estilos globales que afectan a toda la aplicación
+Estilos globales que afectan a toda la aplicación
 */
 
 
@@ -69,13 +69,11 @@ button {
   cursor: pointer;
   transition: border-color 0.25s;
 }
+
 button:hover {
   border-color: #646cff;
 }
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
+
 
 @media (prefers-color-scheme: light) {
   :root {
