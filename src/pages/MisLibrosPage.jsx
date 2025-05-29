@@ -8,8 +8,11 @@ import LibroCard from '../components/LibroCard';
 import NuevoLibroForm from '../components/NuevoLibroForm';
 import { getUserBooks } from '../services/firestore';
 import { auth } from '../firebase/config';
-import { getAuth } from "firebase/auth";
+
 import AddIcon from '@mui/icons-material/Add';
+import { eliminarLibro, editarLibro } from '../services/firestore';
+
+
 
 const MisLibrosPage = () => {
   // Estados para manejar la lista de libros y el diálogo de creación
@@ -29,13 +32,7 @@ const MisLibrosPage = () => {
     cargarLibros();
   }, [cargarLibros]);
 
-  // Efecto para obtener el token de autenticación BORRAR ANTES DE PRODUCCIÓN
-  // Esto es solo para propósitos de depuración y no debería estar en producción
-  useEffect(() => {
-    getAuth().currentUser?.getIdToken().then(token => {
-      console.log("Token de usuario:", token);
-    });
-  }, []);
+
 
   // Navega a la vista de capítulos del libro seleccionado
   const handleSeleccionarLibro = (idLibro) => {
@@ -46,29 +43,17 @@ const MisLibrosPage = () => {
   const handleEliminarLibro = async (idLibro) => {
     const confirmacion = window.confirm("¿Estás seguro de que quieres eliminar este libro?");
     if (!confirmacion) return;
-  
+
     try {
-      const token = await auth.currentUser.getIdToken();
-  
-      const res = await fetch(`http://localhost:3001/api/libros/${idLibro}`, {
-        method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-  
-      if (res.ok) {
-        alert("Libro eliminado correctamente");
-        cargarLibros(); 
-      } else {
-        const data = await res.json();
-        alert("Error: " + data.error);
-      }
+      await eliminarLibro(uid, idLibro);
+      alert("Libro eliminado correctamente");
+      cargarLibros();
     } catch (error) {
       console.error("Error eliminando libro:", error);
-      alert("Error en la conexión con el servidor.");
+      alert("Error al eliminar el libro.");
     }
   };
+
 
   // Funciones para controlar el diálogo de creación de libro
   const abrirDialogo = () => {
@@ -86,28 +71,14 @@ const MisLibrosPage = () => {
 
   const handleEditarLibro = async (idLibro, datos) => {
     try {
-      const token = await auth.currentUser.getIdToken();
-      
-      const res = await fetch(`http://localhost:3001/api/libros/${idLibro}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(datos)
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Error al actualizar el libro');
-      }
-
+      await editarLibro(uid, idLibro, datos);
       cargarLibros(); // Recargar la lista después de actualizar
     } catch (error) {
       console.error("Error editando libro:", error);
       alert("Error al editar el libro.");
     }
   };
+
 
   // Renderiza un mensaje de carga si no hay usuario autenticado
   if (!uid) return <p>Cargando usuario...</p>;

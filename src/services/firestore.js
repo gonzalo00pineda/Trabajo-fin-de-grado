@@ -12,7 +12,7 @@
  * users/{uid}/projects/{projectId}/[characters|chapters]
  */
 
-import { collection, addDoc, getDocs, query, orderBy, updateDoc } from 'firebase/firestore';
+import { collection, addDoc, deleteDoc, getDocs, query, orderBy, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../firebase/config'; // ahora necesitaremos storage también
 import { doc, getDoc } from 'firebase/firestore';
@@ -92,4 +92,15 @@ export const updateBook = async (uid, bookId, data) => {
     await updateDoc(bookRef, data);
 };
 
+// Elimina un libro de Firestore
+export const eliminarLibro = async (uid, idLibro) => {
+    const libroRef = doc(db, 'users', uid, 'projects', idLibro);
+    await deleteDoc(libroRef);
+};
+
+// Edita un libro (título y/o descripción)
+export const editarLibro = async (uid, idLibro, datos) => {
+    const libroRef = doc(db, 'users', uid, 'projects', idLibro);
+    await updateDoc(libroRef, datos);
+};
 
