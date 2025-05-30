@@ -45,7 +45,12 @@ const Header = () => {
   }, [uid, idLibro]);
 
   return (
-    <AppBar position="static" sx={{ backgroundImage: {header}, backgroundSize: 'cover', backgroundPosition: 'center', height: 100 }}>
+    <AppBar position="static" sx={{ 
+      backgroundImage: `url(${header})`,
+      backgroundSize: 'cover', 
+      backgroundPosition: 'center', 
+      height: 100,
+    }}>
       <Toolbar sx={{ justifyContent: 'space-between', height: '100%' }}>
         {/* Sección izquierda: Logo de la aplicación */}
         <Box display="flex" alignItems="center" gap={1}>
