@@ -8,7 +8,6 @@ import LibroCard from '../components/LibroCard';
 import NuevoLibroForm from '../components/NuevoLibroForm';
 import { getUserBooks } from '../services/firestore';
 import { auth } from '../firebase/config';
-
 import AddIcon from '@mui/icons-material/Add';
 import { eliminarLibro, editarLibro } from '../services/firestore';
 

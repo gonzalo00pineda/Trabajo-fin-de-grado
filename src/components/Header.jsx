@@ -16,6 +16,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { getAuth } from 'firebase/auth';
 import { obtenerLibroPorId } from '../services/firestore';
+import LogoApp from '../assets/LogoApp.png';
+import header from '../assets/header.png';
 
 const Header = () => {
   // Estado para almacenar el título del libro actual
@@ -43,11 +45,11 @@ const Header = () => {
   }, [uid, idLibro]);
 
   return (
-    <AppBar position="static" sx={{ backgroundImage: 'url(/src/assets/header.png)', backgroundSize: 'cover', backgroundPosition: 'center', height: 100 }}>
+    <AppBar position="static" sx={{ backgroundImage: {header}, backgroundSize: 'cover', backgroundPosition: 'center', height: 100 }}>
       <Toolbar sx={{ justifyContent: 'space-between', height: '100%' }}>
         {/* Sección izquierda: Logo de la aplicación */}
         <Box display="flex" alignItems="center" gap={1}>
-          <img src="/src/assets/LogoApp.png" alt="Logo" style={{ height: 60 }} />
+          <img src={LogoApp} alt="Logo" style={{ height: 60 }} />
         </Box>
 
         {/* Sección central: Título del libro actual */}
