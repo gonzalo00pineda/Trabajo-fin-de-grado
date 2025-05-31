@@ -1,3 +1,3 @@
 export default function MagiaPage() {
-    return <h2>✨ Página de magia</h2>;
+    return <h2>✨ Poximamente ✨</h2>;
 }

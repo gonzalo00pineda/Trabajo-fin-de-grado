@@ -23,7 +23,9 @@ dist-ssr
 *.sln
 *.sw?
 
-
-
 src/firebase/config.js
 .env
+cors.json
+google-cloud-cli-linux-x86_64.tar.gz
+google-cloud-sdk/
+server/serviceAccountKey.json

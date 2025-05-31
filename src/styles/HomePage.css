@@ -1,0 +1,97 @@
+/**
+ * Estilos de la Página de Inicio
+ * 
+ * Este archivo contiene los estilos específicos para la página de inicio (HomePage)
+ * de la aplicación Novplax. Define la apariencia de:
+ * - Contenedor principal y layout
+ * - Elementos de bienvenida (título, descripciones)
+ * - Botones de autenticación
+ * - Logo y branding
+ * 
+ * La paleta de colores utiliza tonos neutros y profesionales:
+ * - Textos principales: #333
+ * - Textos secundarios: #666, #555
+ * - Fondos: transparente, #f5f5f5
+ */
+
+/* Contenedor principal centrado con ancho máximo */
+.welcome-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem;
+    text-align: center;
+}
+
+/* Título principal de bienvenida */
+h1 {
+    font-size: 2.5rem;
+    color: #333;
+    margin-bottom: 1.5rem;
+}
+
+/* Descripción corta destacada */
+.welcome-description {
+    font-size: 1.2rem;
+    color: #666;
+    margin-bottom: 2rem;
+}
+
+/* Sección de descripción detallada de la aplicación */
+.app-description {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+/* Párrafos de la descripción */
+.app-description p {
+    margin-bottom: 1rem;
+    line-height: 1.6;
+    color: #555;
+}
+
+/* Contenedor de botones de autenticación */
+.auth-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-top: 2rem;
+}
+
+/* Estilos base compartidos para los botones */
+.btn-login, .btn-register {
+    padding: 0.8rem 2rem;
+    border-radius: 4px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+/* Botón de inicio de sesión con estilo outline */
+.btn-login {
+    background-color: transparent;
+    border: 1px solid #333;
+    color: #333;
+}
+
+/* Botón de registro con fondo sólido */
+.btn-register {
+    background-color: #333;
+    color: white;
+    border: 1px solid #333;
+}
+
+/* Efectos hover para los botones */
+.btn-login:hover {
+    background-color: #f5f5f5;
+}
+
+.btn-register:hover {
+    background-color: #444;
+}
+
+/* Logo de la aplicación */
+.welcome-logo {
+    width: 200px;
+    height: auto;
+    margin-bottom: 2rem;
+}

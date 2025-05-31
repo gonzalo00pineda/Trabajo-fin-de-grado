@@ -1,3 +1,11 @@
+/*
+
+index.css
+Estilos globales que afectan a toda la aplicación
+*/
+
+
+
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
@@ -12,6 +20,21 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+/* Asegura que el layout ocupa toda la pantalla sin márgenes */
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+/* Esto se asegura de que todos los elementos no tengan padding/margen inesperado */
+* {
+  box-sizing: inherit;
+}
+
 
 a {
   font-weight: 500;
@@ -46,13 +69,11 @@ button {
   cursor: pointer;
   transition: border-color 0.25s;
 }
+
 button:hover {
   border-color: #646cff;
 }
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
+
 
 @media (prefers-color-scheme: light) {
   :root {
